@@ -5,3 +5,5 @@ target
 target/data
 .settings
 .settings
+src/.DS_Store
+.DS_Store
