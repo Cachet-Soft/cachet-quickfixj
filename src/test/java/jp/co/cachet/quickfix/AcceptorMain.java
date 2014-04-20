@@ -5,18 +5,18 @@ import java.io.*;
 import jp.co.cachet.quickfix.application.AcceptorApplication;
 import quickfix.*;
 
-public class Main {
+public class AcceptorMain {
 
 	public static void main(String[] args) {
 		try {
 			InputStream inputStream = null;
 			if (args.length == 0) {
-				inputStream = Main.class.getResourceAsStream("/acceptor.cfg");
+				inputStream = AcceptorMain.class.getResourceAsStream("/acceptor.cfg");
 			} else if (args.length == 1) {
 				inputStream = new FileInputStream(args[0]);
 			}
 			if (inputStream == null) {
-				System.out.println("usage: " + Main.class.getName()	+ " [configFile].");
+				System.out.println("usage: " + AcceptorMain.class.getName()	+ " [configFile].");
 				return;
 			}
 			SessionSettings settings = new SessionSettings(inputStream);

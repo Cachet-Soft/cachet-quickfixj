@@ -2,8 +2,14 @@ package jp.co.cachet.quickfix.worker;
 
 import jp.co.cachet.quickfix.util.Factory;
 
-public class Workers implements Factory<WorkerService, ServiceType> {
+public enum Workers implements Factory<WorkerService, ServiceType> {
 
+	INSTANCE;
+
+	public WorkerService getInstance() {
+		return getInstance(ServiceType.EXECUTOR_SERVICE);
+	}
+	
 	public WorkerService getInstance(ServiceType serviceType) {
 		switch (serviceType) {
 		case DISRUPTOR:
@@ -13,5 +19,5 @@ public class Workers implements Factory<WorkerService, ServiceType> {
 			return null;
 		}
 	}
-
+	
 }
