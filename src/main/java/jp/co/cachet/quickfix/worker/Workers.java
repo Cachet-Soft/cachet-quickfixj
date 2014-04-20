@@ -1,6 +1,7 @@
 package jp.co.cachet.quickfix.worker;
 
 import jp.co.cachet.quickfix.util.Factory;
+import jp.co.cachet.quickfix.worker.service.ExecutorWorkerService;
 
 public enum Workers implements Factory<WorkerService, ServiceType> {
 
@@ -15,8 +16,8 @@ public enum Workers implements Factory<WorkerService, ServiceType> {
 		case DISRUPTOR:
 			throw new UnsupportedOperationException("Not implemented yet");
 		case EXECUTOR_SERVICE:
-			default:
-			return null;
+		default:
+			return new ExecutorWorkerService();
 		}
 	}
 	
