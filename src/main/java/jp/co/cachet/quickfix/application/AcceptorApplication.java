@@ -40,7 +40,7 @@ public class AcceptorApplication extends MessageCracker implements quickfix.Appl
 	}
 	
 	public void onMessage(quickfix.fix42.BusinessMessageReject message, SessionID sessionId) {
-		log.info("onBusinessMessageReject {}", message);
+		log.warn("onBusinessMessageReject {}", message);
 	}
 
 }
