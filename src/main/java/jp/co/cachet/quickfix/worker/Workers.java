@@ -1,4 +1,4 @@
-package jp.co.cachet.quickfix.workerservice;
+package jp.co.cachet.quickfix.worker;
 
 import jp.co.cachet.quickfix.util.Factory;
 
