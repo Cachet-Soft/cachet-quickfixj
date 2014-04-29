@@ -42,6 +42,11 @@ public class QueueWorkerTest {
 		test(Runtime.getRuntime().availableProcessors(), 10000);
 	}
 
+	@Test
+	public void testManyThread() {
+		test(Runtime.getRuntime().availableProcessors() * 10, 1000000);
+	}
+
 	public void test(final int threads, final long count) {
 		QueueWorkerInvoker<Integer> workerInvoker = getWorkerInvoker(threads);
 		Long expected = (1 + count) * count / 2;
@@ -83,7 +88,7 @@ public class QueueWorkerTest {
 
 		@Override
 		protected void process(Integer item) {
-			// System.out.println(item);
+			System.out.println(item);
 			QueueWorkerTest.add(item);
 		}
 
