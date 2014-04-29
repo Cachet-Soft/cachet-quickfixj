@@ -4,7 +4,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jp.co.cachet.quickfix.worker.WorkerService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class QueueWorkerInvoker<T> implements QueueWorker.WorkerInvoker {
+	private final static Logger log = LoggerFactory.getLogger(QueueWorkerInvoker.class);
+
 	private final AtomicLong current = new AtomicLong(0);
 	private final AtomicLong next = new AtomicLong(1);
 
@@ -25,14 +30,14 @@ public abstract class QueueWorkerInvoker<T> implements QueueWorker.WorkerInvoker
 	@SuppressWarnings("unchecked")
 	public void submit(T item) {
 		// 現在スロットが次スロットに追いつくまで、現在スロットを返します。
-		final long currentIndex = current.get();
-		QueueWorker<?> worker = null;
-		if (next.get() > currentIndex) {
-			worker = ringBuffer[(int) currentIndex & mask];
-		} else {
-			worker = nextWorker();
+		try {
+			final long currentIndex = current.get();
+			QueueWorker<?> worker = next.get() > currentIndex ? ringBuffer[(int) currentIndex & mask]
+					: nextWorker();
+			((QueueWorker<T>) worker).submit(item);
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
 		}
-		((QueueWorker<T>) worker).submit(item);
 	}
 
 	private QueueWorker<?> nextWorker() {

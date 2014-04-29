@@ -7,11 +7,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jp.co.cachet.quickfix.worker.Worker;
 import jp.co.cachet.quickfix.worker.WorkerService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class QueueWorker<T> implements Worker {
 	public interface WorkerInvoker {
 		void onRun();
 	}
 	
+	private final static Logger log = LoggerFactory.getLogger(QueueWorker.class);
+
 	private final Queue<T> queue = new LinkedBlockingQueue<T>();
 	private final AtomicInteger counter = new AtomicInteger(0);
 	
@@ -35,15 +40,19 @@ public abstract class QueueWorker<T> implements Worker {
 	protected abstract void process(T item);
 	
 	public void run() {
-		if (!done) {
-			workerInvoker.onRun();
+		try {
+			if (!done) {
+				workerInvoker.onRun();
+			}
+			T item = null;
+			while ((item = queue.poll()) != null) {
+				process(item);
+			}
+			done = true;
+			counter.set(0);
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
 		}
-		T item = null;
-		while ((item = queue.poll()) != null) {
-			process(item);
-		}
-		done = true;
-		counter.set(0);
 	}
 	
 	/* package */ void clear() {

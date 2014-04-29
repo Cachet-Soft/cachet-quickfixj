@@ -88,8 +88,9 @@ public class QueueWorkerTest {
 
 		@Override
 		protected void process(Integer item) {
-			System.out.println(item);
+			// System.out.println(item);
 			QueueWorkerTest.add(item);
+			Thread.yield();
 		}
 
 	}
