@@ -48,7 +48,6 @@ public class QueueWorkerTest {
 		for (int i = 0; i <= count; i++) {
 			workerInvoker.submit(i);
 		}
-		assertTrue("expected=" + expected + " actual=" + total, expected > total);
 		long current = total;
 		int nTry = 0;
 		while (true) {
@@ -84,6 +83,7 @@ public class QueueWorkerTest {
 
 		@Override
 		protected void process(Integer item) {
+			// System.out.println(item);
 			QueueWorkerTest.add(item);
 		}
 

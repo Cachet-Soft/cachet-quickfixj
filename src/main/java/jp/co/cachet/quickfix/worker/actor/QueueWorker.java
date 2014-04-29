@@ -18,6 +18,8 @@ public abstract class QueueWorker<T> implements Worker {
 	private final WorkerService workerService;
 	private final WorkerInvoker workerInvoker;
 	
+	private boolean done = false;
+
 	public QueueWorker(WorkerService workerService, WorkerInvoker workerInvoker) {
 		this.workerService = workerService;
 		this.workerInvoker = workerInvoker;
@@ -33,21 +35,23 @@ public abstract class QueueWorker<T> implements Worker {
 	protected abstract void process(T item);
 	
 	public void run() {
-		workerInvoker.onRun();
+		if (!done) {
+			workerInvoker.onRun();
+		}
 		T item = null;
 		while ((item = queue.poll()) != null) {
 			process(item);
 		}
+		done = true;
+		counter.set(0);
 	}
 	
 	/* package */ void clear() {
-		if (counter.get() > 0) {
+		if (done) {
+			done = false;
 			counter.set(0);
-			while (!queue.isEmpty()) {
-				T item = null;
-				while ((item = queue.poll()) != null) {
-					process(item);
-				}
+			if (!queue.isEmpty()) {
+				throw new IllegalStateException();
 			}
 		}
 	}

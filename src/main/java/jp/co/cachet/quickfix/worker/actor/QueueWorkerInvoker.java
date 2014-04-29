@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import jp.co.cachet.quickfix.worker.WorkerService;
 
 public abstract class QueueWorkerInvoker<T> implements QueueWorker.WorkerInvoker {
-	private final AtomicLong current = new AtomicLong(-1);
-	private final AtomicLong next = new AtomicLong(0);
+	private final AtomicLong current = new AtomicLong(0);
+	private final AtomicLong next = new AtomicLong(1);
 
 	protected final WorkerService workerService;
 	private final QueueWorker<?>[] ringBuffer;
@@ -24,16 +24,26 @@ public abstract class QueueWorkerInvoker<T> implements QueueWorker.WorkerInvoker
 
 	@SuppressWarnings("unchecked")
 	public void submit(T item) {
-		final long index = next.get();
-		QueueWorker<?> worker = index > current.get() ? ringBuffer[(int) current.incrementAndGet() & mask]
-				: ringBuffer[(int) index & mask];
+		// 現在スロットが次スロットに追いつくまで、現在スロットを返します。
+		final long currentIndex = current.get();
+		QueueWorker<?> worker = null;
+		if (next.get() > currentIndex) {
+			worker = ringBuffer[(int) currentIndex & mask];
+		} else {
+			worker = nextWorker();
+		}
 		((QueueWorker<T>) worker).submit(item);
 	}
 
+	private QueueWorker<?> nextWorker() {
+		QueueWorker<?> worker = ringBuffer[(int) next.incrementAndGet() & mask];
+		worker.clear();
+		return worker;
+	}
+
 	public void onRun() {
-		final long index = next.get();
-		ringBuffer[(int) index & mask].clear();
-		next.incrementAndGet();
+		// 現在スロットをひとつ進めます
+		current.incrementAndGet();
 	}
 
 	private int calcCapacity(int nThreads) {
