@@ -2,13 +2,17 @@ package jp.co.cachet.quickfix.worker.actor;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
 import jp.co.cachet.quickfix.worker.WorkerService;
 import jp.co.cachet.quickfix.worker.service.ExecutorWorkerService;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * QueueWorkerをテストします。<br/>
@@ -18,17 +22,11 @@ import org.junit.Test;
  * 
  */
 public class QueueWorkerTest {
-	public static Long total = 0L;
-
-	public static void add(int value) {
-		synchronized (total) {
-			total += value;
-		}
-	}
+	public static AtomicLong total = new AtomicLong(0);
 
 	@Before
 	public void setUp() {
-		total = 0L;
+		total.set(0);
 	}
 
 	@Test
@@ -42,6 +40,7 @@ public class QueueWorkerTest {
 		test(Runtime.getRuntime().availableProcessors(), 10000);
 	}
 
+	@Ignore("for latency test")
 	@Test
 	public void testManyThread() {
 		test(Runtime.getRuntime().availableProcessors() * 10, 1000000);
@@ -53,7 +52,7 @@ public class QueueWorkerTest {
 		for (int i = 0; i <= count; i++) {
 			workerInvoker.submit(i);
 		}
-		long current = total;
+		long current = total.get();
 		int nTry = 0;
 		while (true) {
 			LockSupport.parkNanos(100 * 1000 * 1000);
@@ -63,9 +62,9 @@ public class QueueWorkerTest {
 					break;
 				}
 			}
-			current = total;
+			current = total.get();
 		}
-		assertTrue("expected=" + expected + " actual=" + total, expected.equals(total));
+		assertTrue("expected=" + expected + " actual=" + total, expected.equals(total.get()));
 	}
 
 	private QueueWorkerInvoker<Integer> getWorkerInvoker(int threads) {
@@ -80,6 +79,7 @@ public class QueueWorkerTest {
 	}
 
 	static class DummyWorker extends QueueWorker<Integer> {
+		private static final Logger log = LoggerFactory.getLogger(DummyWorker.class);
 
 		public DummyWorker(WorkerService workerService,
 				jp.co.cachet.quickfix.worker.actor.QueueWorker.WorkerInvoker workerInvoker) {
@@ -88,10 +88,22 @@ public class QueueWorkerTest {
 
 		@Override
 		protected void process(Integer item) {
-			// System.out.println(item);
-			QueueWorkerTest.add(item);
-			Thread.yield();
+			final long ns = System.nanoTime();
+			log.info("{}", toString(ns));
+			total.addAndGet(item);
+			// Thread.yield();
+			final long elapsed = System.nanoTime() - ns;
+			if (100000 < elapsed) {
+				System.err.println("latency has problem! ns=" + elapsed);
+			}
 		}
 
+		private String toString(long begin) {
+			for (long ns = begin + 1000; ns > System.nanoTime();) {
+
+			}
+			final long elapsed = System.nanoTime() - begin;
+			return "latency ns=" + elapsed + (1000 < elapsed ? " !!! PROBLEM !!!" : "");
+		}
 	}
 }

@@ -9,6 +9,7 @@
 		<quickfixj-version>1.5.3</quickfixj-version>
 		<mina-version>1.1.7</mina-version>
 		<slf4j-version>1.7.6</slf4j-version>
+		<log4j2-version>2.0-rc1</log4j2-version>
 	</properties>
 
 	<!-- QuickFIX/J dependencies -->
@@ -50,14 +51,34 @@
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>${slf4j-version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4j-version}</version>
 		</dependency>
+<!-- changed to Log4J2 Async Logger 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j-version}</version>
+		</dependency>
+ -->
+<!-- changed to Log4J FileAppender 
+ -->
+        <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+          <version>${log4j2-version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+          <version>2.0-rc1</version>
+        </dependency>
+        <dependency>
+          <groupId>com.lmax</groupId>
+          <artifactId>disruptor</artifactId>
+          <version>3.2.1</version>
+        </dependency>
+
 	</dependencies>
 
 	<repositories>
