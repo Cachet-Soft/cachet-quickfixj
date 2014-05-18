@@ -9,7 +9,6 @@ import jp.co.cachet.quickfix.worker.WorkerService;
 import jp.co.cachet.quickfix.worker.service.ExecutorWorkerService;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,21 +31,23 @@ public class QueueWorkerTest {
 	@Test
 	public void testOneThread() {
 		System.out.println("availableProcessors=" + Runtime.getRuntime().availableProcessors());
-		test(1, 10000);
+		test(1, 100000);
 	}
 
 	@Test
 	public void testCoreNumThread() {
-		test(Runtime.getRuntime().availableProcessors(), 10000);
+		test(Runtime.getRuntime().availableProcessors(), 100000);
 	}
 
-	@Ignore("for latency test")
+	// @Ignore("for latency test")
 	@Test
 	public void testManyThread() {
-		test(Runtime.getRuntime().availableProcessors() * 10, 1000000);
+		test(Runtime.getRuntime().availableProcessors() * 10, 100000);
 	}
 
 	public void test(final int threads, final long count) {
+		final long ns = System.nanoTime();
+
 		QueueWorkerInvoker<Integer> workerInvoker = getWorkerInvoker(threads);
 		Long expected = (1 + count) * count / 2;
 		for (int i = 0; i <= count; i++) {
@@ -64,6 +65,8 @@ public class QueueWorkerTest {
 			}
 			current = total.get();
 		}
+
+		System.out.println(threads + " threads throughput(/s) =" + count * 1000000000 / (System.nanoTime() - ns));
 		assertTrue("expected=" + expected + " actual=" + total, expected.equals(total.get()));
 	}
 

@@ -3,16 +3,19 @@
 <Configuration status="WARN">
   <Appenders>
     <!-- Async Loggers will auto-flush in batches, so switch off immediateFlush. -->
-    <RandomAccessFile name="File" fileName="target/cachet-quickfixj-async.log" 
-              immediateFlush="false" append="false">
+    <RandomAccessFile name="File" fileName="target/cachet-quickfixj-log4j2.log" 
+              immediateFlush="false" append="true">
       <PatternLayout>
         <Pattern>%d{yyyy/MM/dd HH:mm:ss.SSS} %-5p[%t] %c{2} - %m%n</Pattern>
       </PatternLayout>
     </RandomAccessFile>
   </Appenders>
   <Loggers>
-    <asyncRoot level="info" includeLocation="false">
+    <!-- asyncRoot level="info" includeLocation="false">
       <AppenderRef ref="File"/>
-    </asyncRoot>
+    </asyncRoot -->
+    <root level="debug" includeLocation="false">
+      <AppenderRef ref="File"/>
+    </root>
   </Loggers>
 </Configuration>
