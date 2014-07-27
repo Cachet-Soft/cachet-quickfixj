@@ -1,0 +1,35 @@
+apply plugin: 'java'
+
+defaultTasks 'build'
+
+group = 'jp.co.cachet'
+version = '1.0.0'
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+ext {
+		quickfixjVersion = '1.5.3'
+		minaVersion = '1.1.7'
+		slf4jVersion = '1.7.7'
+		log4j2Version = '2.0-rc1'
+}
+
+repositories {
+    mavenCentral()
+    maven {url 'http://repo.marketcetera.org/maven'}
+}
+
+dependencies {
+    compile "quickfixj:quickfixj-core:${quickfixjVersion}",
+    			"quickfixj:quickfixj-msg-fix40:${quickfixjVersion}", 
+    			"quickfixj:quickfixj-msg-fix41:${quickfixjVersion}", 
+    			"quickfixj:quickfixj-msg-fix42:${quickfixjVersion}", 
+    			"quickfixj:quickfixj-msg-fix43:${quickfixjVersion}", 
+    			"quickfixj:quickfixj-msg-fix44:${quickfixjVersion}", 
+    			"quickfixj:quickfixj-msg-fix44:${quickfixjVersion}",
+    			"org.apache.mina:mina-core:${minaVersion}",
+    			"org.slf4j:slf4j-api:${slf4jVersion}",
+    			"org.slf4j:slf4j-log4j12:${slf4jVersion}"
+    testCompile 'junit:junit:4.11'
+}
+
