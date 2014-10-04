@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.LockSupport;
 
+import org.apache.log4j.xml.DOMConfigurator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +24,8 @@ public class SocketTest {
 
 	@Before
 	public void setUp() {
+		DOMConfigurator.configure("src/test/resources/log4j.xml");
+
 		executorService.submit(new Runnable() {
 
 			public void run() {

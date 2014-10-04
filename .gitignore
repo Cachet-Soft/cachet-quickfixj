@@ -8,3 +8,4 @@ target/data
 src/.DS_Store
 .DS_Store
 /build/
+/.gradle/

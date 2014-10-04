@@ -4,8 +4,9 @@ defaultTasks 'build'
 
 group = 'jp.co.cachet'
 version = '1.0.0'
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 ext {
 		quickfixjVersion = '1.5.3'
@@ -20,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    compile "quickfixj:quickfixj-core:${quickfixjVersion}",
+    compile 	"quickfixj:quickfixj-core:${quickfixjVersion}",
     			"quickfixj:quickfixj-msg-fix40:${quickfixjVersion}", 
     			"quickfixj:quickfixj-msg-fix41:${quickfixjVersion}", 
     			"quickfixj:quickfixj-msg-fix42:${quickfixjVersion}", 
@@ -29,7 +30,37 @@ dependencies {
     			"quickfixj:quickfixj-msg-fix44:${quickfixjVersion}",
     			"org.apache.mina:mina-core:${minaVersion}",
     			"org.slf4j:slf4j-api:${slf4jVersion}",
-    			"org.slf4j:slf4j-log4j12:${slf4jVersion}"
+    			"org.slf4j:slf4j-log4j12:${slf4jVersion}",
+    			'uk.co.real-logic:sbe:1.0.2-RC2'
+
     testCompile 'junit:junit:4.11'
 }
 
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+            srcDir 'src/generated/java'
+        }
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+    test {
+        java {
+            srcDir 'src/test/java'
+        }
+        resources {
+            srcDir 'src/test/resources'
+        }
+    }
+}
+
+task generateSources (type: JavaExec) {
+	classpath = configurations.compile
+	main = 'uk.co.real_logic.sbe.SbeTool'
+	args = ['src/main/resources/car-c.xml']
+	jvmArgs = ['-Dsbe.output.dir=src/generated/java']
+}
+
+compileJava.dependsOn generateSources
