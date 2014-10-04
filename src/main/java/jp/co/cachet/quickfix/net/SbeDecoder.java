@@ -21,33 +21,69 @@ import uk.co.real_logic.sbe.examples.car.OptionalExtras;
 
 public class SbeDecoder {
 	private static final Logger log = LoggerFactory.getLogger(SbeDecoder.class);
+	private static final int ACTING_VERSION = 0;
 
 	private final MessageHeader header = new MessageHeader();
 	private final Car bodyCar = new Car();
 	private final byte[] tempBuffer = new byte[128];
 
-	public jp.co.cachet.quickfix.entity.Car decode(DirectBuffer buffer)
-			throws UnsupportedEncodingException {
-		final int newPosition = buffer.byteBuffer().position() + header.size() + Car.BLOCK_LENGTH;
-		if (!canDecode(buffer, newPosition)) {
-			return null;
-		}
-		final jp.co.cachet.quickfix.entity.Car decoded = decode(buffer, buffer.byteBuffer().position());
-		buffer.byteBuffer().position(bodyCar.limit());
-		log.info("position = {}", buffer.byteBuffer().position());
-
-		return decoded;
-	}
-
 	public boolean canDecode(DirectBuffer buffer, int newPosition) {
 		return (newPosition > buffer.capacity() || newPosition < 0) ? false : true;
 	}
 
-	public jp.co.cachet.quickfix.entity.Car decode(DirectBuffer buffer, int bufferIndex)
-			throws UnsupportedEncodingException {
-		header.wrap(buffer, bufferIndex, 0);
+	public Object decode(DirectBuffer buffer) throws UnsupportedEncodingException {
+		return decode(buffer, false);
+	}
 
-		bodyCar.wrapForDecode(buffer, bufferIndex + header.size(), header.blockLength(), header.version());
+	public Object decode(DirectBuffer buffer, boolean rescue) throws UnsupportedEncodingException {
+		Object decoded = decode(buffer, buffer.byteBuffer().position(), rescue);
+		log.info("position = {}", buffer.byteBuffer().position());
+		return decoded;
+	}
+
+	public Object decode(DirectBuffer buffer, int bufferIndex) throws UnsupportedEncodingException {
+		return decode(buffer, bufferIndex, false);
+	}
+
+	public Object decode(DirectBuffer buffer, int bufferIndex, boolean rescue)
+			throws UnsupportedEncodingException {
+		final int newPosition = bufferIndex + header.size();
+		if (!canDecode(buffer, newPosition)) {
+			return null;
+		}
+
+		header.wrap(buffer, bufferIndex, ACTING_VERSION);
+		final int blockLength = header.blockLength();
+		final int templateId = header.templateId();
+		final int schemaId = header.schemaId();
+		final int version = header.version();
+
+		switch (templateId) {
+		case Car.TEMPLATE_ID:
+			if (blockLength == Car.BLOCK_LENGTH && schemaId == Car.SCHEMA_ID && version == Car.SCHEMA_VERSION) {
+				Object decoded = decode(buffer, bufferIndex + header.size(), bodyCar);
+				buffer.byteBuffer().position(bodyCar.limit());
+				return decoded;
+			}
+			break;
+		default:
+			break;
+		}
+
+		if (rescue) {
+			return decode(buffer, ++bufferIndex, rescue);
+		}
+		throw new UnsupportedEncodingException("Unknown templatedId:" + templateId);
+	}
+
+	public jp.co.cachet.quickfix.entity.Car decode(DirectBuffer buffer, int bufferIndex, Car body)
+			throws UnsupportedEncodingException {
+		final int newPosition = bufferIndex + Car.BLOCK_LENGTH;
+		if (!canDecode(buffer, newPosition)) {
+			return null;
+		}
+
+		bodyCar.wrapForDecode(buffer, bufferIndex, header.blockLength(), header.version());
 
 		long serialNumber = bodyCar.serialNumber();
 		int modelYear = bodyCar.modelYear();

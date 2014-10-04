@@ -15,6 +15,7 @@ import uk.co.real_logic.sbe.examples.car.MessageHeader;
 
 public class SbeEncoder {
 	private static final Logger log = LoggerFactory.getLogger(SbeEncoder.class);
+	private static final int ACTING_VERSION = 0;
 
 	private final MessageHeader header = new MessageHeader();
 	private final Car bodyCar = new Car();
@@ -30,7 +31,7 @@ public class SbeEncoder {
 
 	public void encode(jp.co.cachet.quickfix.entity.Car car, DirectBuffer buffer, int bufferIndex)
 			throws UnsupportedEncodingException {
-		header.wrap(buffer, bufferIndex, 0)
+		header.wrap(buffer, bufferIndex, ACTING_VERSION)
 				.blockLength(bodyCar.sbeBlockLength())
 				.templateId(bodyCar.sbeTemplateId())
 				.schemaId(bodyCar.sbeSchemaId())

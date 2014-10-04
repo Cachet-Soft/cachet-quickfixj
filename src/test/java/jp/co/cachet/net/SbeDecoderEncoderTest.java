@@ -49,7 +49,7 @@ public class SbeDecoderEncoderTest {
 		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(1024).order(ByteOrder.nativeOrder()));
 
 		sbeEncoder.encode(car, buffer, buffer.byteBuffer().position());
-		Car decoded = sbeDecoder.decode(buffer, buffer.byteBuffer().position());
+		Car decoded = (Car) sbeDecoder.decode(buffer, buffer.byteBuffer().position());
 
 		doAssertEquals(car, decoded);
 	}
@@ -83,9 +83,49 @@ public class SbeDecoderEncoderTest {
 		}
 
 		buffer.byteBuffer().clear();
-		Car decoded0 = sbeDecoder.decode(buffer);
-		Car decoded1 = sbeDecoder.decode(buffer);
-		Car decoded2 = sbeDecoder.decode(buffer);
+		Car decoded0 = (Car) sbeDecoder.decode(buffer);
+		Car decoded1 = (Car) sbeDecoder.decode(buffer);
+		Car decoded2 = (Car) sbeDecoder.decode(buffer);
+
+		doAssertEquals(car0, decoded0);
+		doAssertEquals(car1, decoded1);
+		assertNull(decoded2);
+	}
+
+	@Test
+	public void testRescue() throws UnsupportedEncodingException {
+		List<FuelFigure> fuelFigures = new ArrayList<FuelFigure>();
+		List<PerformanceFigure> performanceFigures = new ArrayList<PerformanceFigure>();
+		Car car0 = new Car(123456789, 2014, BooleanType.YES, Model.A,
+				new int[] { 1, 2, 3, 4, 5 }, "abcdef",
+				new OptionalExtras(true, true, false),
+				new Engine(25, (short) 6, 9000, "BMW", "Petrol"),
+				fuelFigures, performanceFigures,
+				"BMW", "323i");
+		Car car1 = new Car(123456790, 2015, BooleanType.NO, Model.B,
+				new int[] { 6, 7, 8, 9, 10 }, "ghijkl",
+				new OptionalExtras(true, true, true),
+				new Engine(20, (short) 4, 8000, "ADI", "Petrol"),
+				fuelFigures, performanceFigures,
+				"Audi", "A4");
+
+		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(130).order(ByteOrder.nativeOrder()));
+		DirectBuffer badBuffer = new DirectBuffer(ByteBuffer.allocate(1024).order(ByteOrder.nativeOrder()));
+
+		sbeEncoder.encode(car0, buffer);
+		sbeEncoder.encode(car1, buffer);
+		try {
+			sbeEncoder.encode(car1, buffer);
+			fail();
+		} catch (IllegalArgumentException okay) {
+		} catch (IndexOutOfBoundsException okay) {
+		}
+
+		buffer.getBytes(0, badBuffer, 7, buffer.capacity());
+		badBuffer.byteBuffer().clear();
+		Car decoded0 = (Car) sbeDecoder.decode(badBuffer, true);
+		Car decoded1 = (Car) sbeDecoder.decode(badBuffer, true);
+		Car decoded2 = (Car) sbeDecoder.decode(badBuffer, true);
 
 		doAssertEquals(car0, decoded0);
 		doAssertEquals(car1, decoded1);
