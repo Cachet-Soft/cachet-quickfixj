@@ -1,8 +1,11 @@
 package jp.co.cachet.quickfix.net;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.SocketChannel;
 
 import jp.co.cachet.quickfix.entity.Car;
@@ -13,11 +16,10 @@ import org.slf4j.LoggerFactory;
 
 import uk.co.real_logic.sbe.codec.java.DirectBuffer;
 
-public class SbeAcceptor implements Runnable, Response<Object> {
+public abstract class SbeAcceptor implements Runnable, Closeable, Response<Object>, SbeApplication {
 	private static final Logger log = LoggerFactory.getLogger(SbeAcceptor.class);
 
 	private final SocketChannel socket;
-	private final SbeApplication application;
 
 	private final DirectBuffer decodeBuffer;
 	private final DirectBuffer badBuffer;
@@ -25,9 +27,8 @@ public class SbeAcceptor implements Runnable, Response<Object> {
 	private final SbeDecoder sbeDecoder = new SbeDecoder();
 	private final SbeEncoder sbeEncoder = new SbeEncoder();
 
-	public SbeAcceptor(SocketChannel socket, SbeApplication application) throws SocketException {
+	public SbeAcceptor(SocketChannel socket) throws SocketException {
 		this.socket = socket;
-		this.application = application;
 		decodeBuffer = new DirectBuffer(ByteBuffer.allocate(socket.socket().getReceiveBufferSize() * 10)
 				.order(ByteOrder.nativeOrder()));
 		badBuffer = new DirectBuffer(ByteBuffer.allocate(decodeBuffer.capacity()).order(ByteOrder.nativeOrder()));
@@ -46,11 +47,11 @@ public class SbeAcceptor implements Runnable, Response<Object> {
 				if (remaining > 0) {
 					decodeBuffer.getBytes(0, badBuffer, remaining, limit);
 					while ((decoded = sbeDecoder.decode(badBuffer, true)) != null) {
-						application.onCar((Car) decoded, this);
+						onCar((Car) decoded, this);
 					}
 				} else {
 					while ((decoded = sbeDecoder.decode(decodeBuffer)) != null) {
-						application.onCar((Car) decoded, this);
+						onCar((Car) decoded, this);
 					}
 				}
 
@@ -62,16 +63,16 @@ public class SbeAcceptor implements Runnable, Response<Object> {
 				}
 				decodeBuffer.byteBuffer().clear();
 			}
+		} catch (AsynchronousCloseException ignored) {
 		} catch (Exception e) {
 			log.error("", e);
 		}
 	}
 
-	@Override
-	public void onResponse(Object arg) {
+	public void send(Object message) {
 		try {
-			if (arg instanceof Car) {
-				Car car = (Car) arg;
+			if (message instanceof Car) {
+				Car car = (Car) message;
 				encodeBuffer.byteBuffer().clear();
 				sbeEncoder.encode(car, encodeBuffer);
 				encodeBuffer.byteBuffer().flip();
@@ -82,7 +83,18 @@ public class SbeAcceptor implements Runnable, Response<Object> {
 		} catch (Exception e) {
 			log.error("", e);
 		}
+	}
 
+	@Override
+	public void onResponse(Object message) {
+		send(message);
+	}
+
+	@Override
+	public void close() throws IOException {
+		if (socket != null && socket.isOpen()) {
+			socket.close();
+		}
 	}
 
 }
