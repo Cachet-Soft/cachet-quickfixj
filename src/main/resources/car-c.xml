@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <messageSchema package="uk.co.real_logic.sbe.examples.car"
-               id="1"
+               id="777"
                semanticVersion="5.2"
                description="Code generation unit test support"
                byteOrder="littleEndian">
@@ -46,7 +46,7 @@
             <choice name="cruiseControl">2</choice>
         </set>
     </types>
-    <message name="Car" id="1" description="Description of a basic Car">
+    <message name="Car" id="777" description="Description of a basic Car">
         <field name="serialNumber" id="1" type="uint32"/>
         <field name="modelYear" id="2" type="ModelYear"/>
         <field name="available" id="3" type="BooleanType"/>

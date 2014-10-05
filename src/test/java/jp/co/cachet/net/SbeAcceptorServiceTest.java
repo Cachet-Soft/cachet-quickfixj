@@ -38,7 +38,7 @@ import uk.co.real_logic.sbe.examples.car.Model;
 public class SbeAcceptorServiceTest {
 	private static final int PORT = 9999;
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(100);
-	private static final int MAX = 1000;
+	private static final int MAX = 1000000;
 
 	private SbeAcceptorService acceptorService;
 	private AtomicInteger counter = new AtomicInteger(0);

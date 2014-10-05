@@ -28,7 +28,7 @@ public class SbeDecoder {
 	private final byte[] tempBuffer = new byte[128];
 
 	public boolean canDecode(DirectBuffer buffer, int newPosition) {
-		return (newPosition > buffer.capacity() || newPosition < 0) ? false : true;
+		return (newPosition > buffer.byteBuffer().limit() || newPosition < 0) ? false : true;
 	}
 
 	public Object decode(DirectBuffer buffer) throws UnsupportedEncodingException {
@@ -71,7 +71,7 @@ public class SbeDecoder {
 				break;
 			}
 		} catch (Exception e) {
-			log.warn("{}", e);
+			log.warn("templatedId:{} excetion:{}", templateId, e);
 		}
 
 		if (decoded != null) {
