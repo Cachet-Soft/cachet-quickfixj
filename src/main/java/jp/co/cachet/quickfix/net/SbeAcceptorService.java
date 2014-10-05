@@ -29,6 +29,10 @@ public class SbeAcceptorService implements Runnable {
 		this.factory = factory;
 	}
 
+	public boolean isActive() {
+		return serverSocket != null && serverSocket.isOpen();
+	}
+
 	public void start() {
 		executorService.submit(this);
 	}
@@ -56,7 +60,7 @@ public class SbeAcceptorService implements Runnable {
 		try {
 			serverSocket = ServerSocketChannel.open();
 			serverSocket.socket().bind(new InetSocketAddress(port));
-			while (serverSocket.isOpen()) {
+			while (isActive()) {
 				try {
 					SocketChannel socket = serverSocket.accept();
 					SbeAcceptor acceptor = factory.getInstance(socket);
