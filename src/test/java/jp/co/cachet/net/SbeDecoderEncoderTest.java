@@ -121,7 +121,7 @@ public class SbeDecoderEncoderTest {
 		} catch (IndexOutOfBoundsException okay) {
 		}
 
-		buffer.getBytes(0, badBuffer, 7, buffer.capacity());
+		buffer.getBytes(0, badBuffer, 7, buffer.byteBuffer().limit());
 		badBuffer.byteBuffer().clear();
 		Car decoded0 = (Car) sbeDecoder.decode(badBuffer, true);
 		Car decoded1 = (Car) sbeDecoder.decode(badBuffer, true);

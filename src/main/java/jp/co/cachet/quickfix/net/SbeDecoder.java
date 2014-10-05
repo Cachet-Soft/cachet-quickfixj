@@ -58,22 +58,31 @@ public class SbeDecoder {
 		final int schemaId = header.schemaId();
 		final int version = header.version();
 
-		switch (templateId) {
-		case Car.TEMPLATE_ID:
-			if (blockLength == Car.BLOCK_LENGTH && schemaId == Car.SCHEMA_ID && version == Car.SCHEMA_VERSION) {
-				Object decoded = decode(buffer, bufferIndex + header.size(), bodyCar);
-				buffer.byteBuffer().position(bodyCar.limit());
-				return decoded;
+		Object decoded = null;
+		try {
+			switch (templateId) {
+			case Car.TEMPLATE_ID:
+				if (blockLength == Car.BLOCK_LENGTH && schemaId == Car.SCHEMA_ID && version == Car.SCHEMA_VERSION) {
+					decoded = decode(buffer, bufferIndex + header.size(), bodyCar);
+					buffer.byteBuffer().position(bodyCar.limit());
+				}
+				break;
+			default:
+				break;
 			}
-			break;
-		default:
-			break;
+		} catch (Exception e) {
+			log.warn("{}", e);
 		}
 
+		if (decoded != null) {
+			return decoded;
+		}
 		if (rescue) {
 			return decode(buffer, ++bufferIndex, rescue);
 		}
-		throw new UnsupportedEncodingException("Unknown templatedId:" + templateId);
+
+		log.warn("Unknown templatedId:{}", templateId);
+		return null;
 	}
 
 	public jp.co.cachet.quickfix.entity.Car decode(DirectBuffer buffer, int bufferIndex, Car body)
