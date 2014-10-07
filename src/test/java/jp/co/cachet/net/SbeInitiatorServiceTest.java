@@ -95,11 +95,12 @@ public class SbeInitiatorServiceTest {
 			initiatorService.send(car);
 		}
 
-		final long end = System.currentTimeMillis();
-		final long elapsed = end - start;
-		while (MAX > counter.get() && (System.currentTimeMillis() - end) < 10000) {
+		final long done = System.currentTimeMillis();
+		while (MAX > counter.get() && (System.currentTimeMillis() - done) < 10000) {
 			LockSupport.parkNanos(1);
 		}
+		final long end = System.currentTimeMillis();
+		final long elapsed = end - start;
 
 		System.out.printf("count=%d, elapsed=%d ms, throuput=%.1f /s, latency=%.1f us%n",
 				counter.get(), elapsed, counter.get() * 1000D / elapsed, elapsed * 1000D / counter.get());

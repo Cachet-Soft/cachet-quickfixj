@@ -28,6 +28,7 @@ import jp.co.cachet.quickfix.util.Response;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.co.real_logic.sbe.codec.java.DirectBuffer;
@@ -69,31 +70,51 @@ public class SbeAcceptorServiceTest {
 
 	@Test
 	public void test() throws Exception {
+		doTest(false);
+	}
+
+	@Ignore("TODO: fix bad data handling")
+	@Test
+	public void testBadData() throws Exception {
+		doTest(true);
+	}
+
+	private void doTest(boolean badData) throws Exception {
 		SbeEncoder sbeEncoder = new SbeEncoder();
 		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(130).order(ByteOrder.nativeOrder()));
 		SocketChannel socket = SocketChannel.open(new InetSocketAddress("localhost", PORT));
 
+		int total = 0;
 		final long start = System.currentTimeMillis();
 		for (int i = 0; i < MAX; i++) {
 			Car car = getInstance(i);
 			buffer.byteBuffer().clear();
 			sbeEncoder.encode(car, buffer);
 			buffer.byteBuffer().flip();
+			if (badData && ++total % 2 == 0) {
+				buffer.byteBuffer().limit(getBadPosition(buffer.byteBuffer().limit()));
+				i--;
+			}
 
 			while (buffer.byteBuffer().hasRemaining()) {
 				socket.write(buffer.byteBuffer());
 			}
 		}
 
-		final long end = System.currentTimeMillis();
-		final long elapsed = end - start;
-		while (MAX > counter.get() && (System.currentTimeMillis() - end) < 1000) {
+		final long done = System.currentTimeMillis();
+		while (MAX > counter.get() && (System.currentTimeMillis() - done) < 10000) {
 			LockSupport.parkNanos(1);
 		}
+		final long end = System.currentTimeMillis();
+		final long elapsed = end - start;
 
 		System.out.printf("count=%d, elapsed=%d ms, throuput=%.1f /s, latency=%.1f us%n",
 				counter.get(), elapsed, counter.get() * 1000D / elapsed, elapsed * 1000D / counter.get());
 		assertEquals(MAX, counter.get());
+	}
+
+	private int getBadPosition(int position) {
+		return (int) (Math.random() * (position - 2)) + 1;
 	}
 
 	private Car getInstance(int i) {

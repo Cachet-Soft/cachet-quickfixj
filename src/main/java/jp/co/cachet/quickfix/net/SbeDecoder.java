@@ -35,18 +35,17 @@ public class SbeDecoder {
 		return decode(buffer, false);
 	}
 
-	public Object decode(DirectBuffer buffer, boolean rescue) throws UnsupportedEncodingException {
+	public Object decode(DirectBuffer buffer, boolean rescue) {
 		Object decoded = decode(buffer, buffer.byteBuffer().position(), rescue);
 		log.info("position = {}", buffer.byteBuffer().position());
 		return decoded;
 	}
 
-	public Object decode(DirectBuffer buffer, int bufferIndex) throws UnsupportedEncodingException {
+	public Object decode(DirectBuffer buffer, int bufferIndex) {
 		return decode(buffer, bufferIndex, false);
 	}
 
-	public Object decode(DirectBuffer buffer, int bufferIndex, boolean rescue)
-			throws UnsupportedEncodingException {
+	public Object decode(DirectBuffer buffer, int bufferIndex, boolean rescue) {
 		final int newPosition = bufferIndex + header.size();
 		if (!canDecode(buffer, newPosition)) {
 			return null;
@@ -58,25 +57,20 @@ public class SbeDecoder {
 		final int schemaId = header.schemaId();
 		final int version = header.version();
 
-		Object decoded = null;
 		try {
 			switch (templateId) {
 			case Car.TEMPLATE_ID:
 				if (blockLength == Car.BLOCK_LENGTH && schemaId == Car.SCHEMA_ID && version == Car.SCHEMA_VERSION) {
-					decoded = decode(buffer, bufferIndex + header.size(), bodyCar);
-					buffer.byteBuffer().position(bodyCar.limit());
+					return decode(buffer, bufferIndex + header.size(), bodyCar);
 				}
 				break;
 			default:
 				break;
 			}
 		} catch (Exception e) {
-			log.warn("templatedId:{} excetion:{}", templateId, e);
+			log.warn("bufferIndex:{} templatedId:{} excetion:{}", bufferIndex, templateId, e);
 		}
 
-		if (decoded != null) {
-			return decoded;
-		}
 		if (rescue) {
 			return decode(buffer, ++bufferIndex, rescue);
 		}
@@ -154,8 +148,10 @@ public class SbeDecoder {
 		String make = new String(tempBuffer, 0, bodyCar.getMake(tempBuffer, 0, tempBuffer.length), "UTF-8");
 		String model = new String(tempBuffer, 0, bodyCar.getModel(tempBuffer, 0, tempBuffer.length), "UTF-8");
 
-		return new jp.co.cachet.quickfix.entity.Car(
+		jp.co.cachet.quickfix.entity.Car decoded = new jp.co.cachet.quickfix.entity.Car(
 				serialNumber, modelYear, available, code, someNumbers, vehicleCode, extras, engine, fuelFigures,
 				performanceFigures, make, model);
+		buffer.byteBuffer().position(bodyCar.limit());
+		return decoded;
 	}
 }

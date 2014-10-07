@@ -22,7 +22,6 @@ public abstract class SbeAcceptor implements Runnable, Closeable, Response<Objec
 	private final SocketChannel socket;
 
 	private final DirectBuffer decodeBuffer;
-	private final DirectBuffer badBuffer;
 	private final DirectBuffer encodeBuffer = new DirectBuffer(ByteBuffer.allocate(128).order(ByteOrder.nativeOrder()));
 	private final SbeDecoder sbeDecoder = new SbeDecoder();
 	private final SbeEncoder sbeEncoder = new SbeEncoder();
@@ -31,7 +30,6 @@ public abstract class SbeAcceptor implements Runnable, Closeable, Response<Objec
 		this.socket = socket;
 		decodeBuffer = new DirectBuffer(ByteBuffer.allocate(socket.socket().getReceiveBufferSize() * 10)
 				.order(ByteOrder.nativeOrder()));
-		badBuffer = new DirectBuffer(ByteBuffer.allocate(decodeBuffer.capacity()).order(ByteOrder.nativeOrder()));
 	}
 
 	@Override
@@ -44,24 +42,17 @@ public abstract class SbeAcceptor implements Runnable, Closeable, Response<Objec
 				final int limit = decodeBuffer.byteBuffer().limit();
 
 				Object decoded = null;
-				if (remaining > 0) {
-					decodeBuffer.getBytes(0, badBuffer, remaining, limit);
-					while ((decoded = sbeDecoder.decode(badBuffer, true)) != null) {
-						onCar((Car) decoded, this);
-					}
-				} else {
-					while ((decoded = sbeDecoder.decode(decodeBuffer)) != null) {
-						onCar((Car) decoded, this);
-					}
+				while ((decoded = sbeDecoder.decode(decodeBuffer, true)) != null) {
+					onCar((Car) decoded, this);
 				}
 
 				final int position = decodeBuffer.byteBuffer().position();
 				remaining = limit - position;
+				decodeBuffer.byteBuffer().clear();
 				if (remaining > 0) {
 					log.warn("remain={}, limit={}, position={}", remaining, limit, position);
-					decodeBuffer.getBytes(position, badBuffer, 0, remaining);
+					decodeBuffer.byteBuffer().position(remaining);
 				}
-				decodeBuffer.byteBuffer().clear();
 			}
 		} catch (AsynchronousCloseException ignored) {
 		} catch (Exception e) {

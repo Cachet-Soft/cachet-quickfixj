@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
@@ -44,6 +45,7 @@ public class SocketTest {
 							channel.write(buf);
 						}
 					}
+				} catch (AsynchronousCloseException ignored) {
 				} catch (Exception e) {
 					log.error("", e);
 				} finally {
