@@ -36,8 +36,13 @@ public class SbeDecoder {
 	}
 
 	public Object decode(DirectBuffer buffer, boolean rescue) {
-		Object decoded = decode(buffer, buffer.byteBuffer().position(), rescue);
-		log.info("position = {}", buffer.byteBuffer().position());
+		Object decoded = null;
+		try {
+			decoded = decode(buffer, buffer.byteBuffer().position(), rescue);
+			log.info("position = {}", buffer.byteBuffer().position());
+		} catch (Exception e) {
+			log.error("", e);
+		}
 		return decoded;
 	}
 
@@ -86,12 +91,13 @@ public class SbeDecoder {
 			return null;
 		}
 
-		bodyCar.wrapForDecode(buffer, bufferIndex, header.blockLength(), header.version());
+		body.wrapForDecode(buffer, bufferIndex, header.blockLength(), header.version());
+		buffer.byteBuffer().position(body.limit());
 
-		long serialNumber = bodyCar.serialNumber();
-		int modelYear = bodyCar.modelYear();
-		BooleanType available = bodyCar.available();
-		Model code = bodyCar.code();
+		long serialNumber = body.serialNumber();
+		int modelYear = body.modelYear();
+		BooleanType available = body.available();
+		Model code = body.code();
 
 		int size = 0;
 
@@ -99,19 +105,19 @@ public class SbeDecoder {
 		int[] someNumbers = new int[size];
 		for (int i = 0; i < size; i++)
 		{
-			someNumbers[i] = bodyCar.someNumbers(i);
+			someNumbers[i] = body.someNumbers(i);
 		}
 
-		String vehicleCode = new String(tempBuffer, 0, bodyCar.getVehicleCode(tempBuffer, 0), "UTF-8");
+		String vehicleCode = new String(tempBuffer, 0, body.getVehicleCode(tempBuffer, 0), "UTF-8");
 
-		final OptionalExtras sbeExtras = bodyCar.extras();
+		final OptionalExtras sbeExtras = body.extras();
 		jp.co.cachet.quickfix.entity.OptionalExtras extras = new jp.co.cachet.quickfix.entity.OptionalExtras(
 				sbeExtras.cruiseControl(),
 				sbeExtras.sportsPack(),
 				sbeExtras.sunRoof()
 				);
 
-		final Engine sbeEngine = bodyCar.engine();
+		final Engine sbeEngine = body.engine();
 		jp.co.cachet.quickfix.entity.Engine engine = new jp.co.cachet.quickfix.entity.Engine(
 				sbeEngine.capacity(),
 				sbeEngine.numCylinders(),
@@ -122,7 +128,7 @@ public class SbeDecoder {
 
 
 		List<FuelFigure> fuelFigures = new ArrayList<FuelFigure>();
-		for (final Car.FuelFigures fuelFigure : bodyCar.fuelFigures()) {
+		for (final Car.FuelFigures fuelFigure : body.fuelFigures()) {
 			fuelFigures.add(new FuelFigure(
 					fuelFigure.speed(),
 					fuelFigure.mpg()
@@ -130,7 +136,7 @@ public class SbeDecoder {
 		}
 
 		List<PerformanceFigure> performanceFigures = new ArrayList<PerformanceFigure>();
-		for (final Car.PerformanceFigures performanceFigure : bodyCar.performanceFigures()) {
+		for (final Car.PerformanceFigures performanceFigure : body.performanceFigures()) {
 			List<Acceleration> accelerations = new ArrayList<Acceleration>();
 			for (final Car.PerformanceFigures.Acceleration acceleration : performanceFigure.acceleration()) {
 				accelerations.add(new Acceleration(
@@ -145,13 +151,11 @@ public class SbeDecoder {
 
 		}
 
-		String make = new String(tempBuffer, 0, bodyCar.getMake(tempBuffer, 0, tempBuffer.length), "UTF-8");
-		String model = new String(tempBuffer, 0, bodyCar.getModel(tempBuffer, 0, tempBuffer.length), "UTF-8");
+		String make = new String(tempBuffer, 0, body.getMake(tempBuffer, 0, tempBuffer.length), "UTF-8");
+		String model = new String(tempBuffer, 0, body.getModel(tempBuffer, 0, tempBuffer.length), "UTF-8");
 
-		jp.co.cachet.quickfix.entity.Car decoded = new jp.co.cachet.quickfix.entity.Car(
+		return new jp.co.cachet.quickfix.entity.Car(
 				serialNumber, modelYear, available, code, someNumbers, vehicleCode, extras, engine, fuelFigures,
 				performanceFigures, make, model);
-		buffer.byteBuffer().position(bodyCar.limit());
-		return decoded;
 	}
 }

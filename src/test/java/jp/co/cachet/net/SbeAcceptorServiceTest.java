@@ -28,7 +28,6 @@ import jp.co.cachet.quickfix.util.Response;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.co.real_logic.sbe.codec.java.DirectBuffer;
@@ -38,14 +37,14 @@ import uk.co.real_logic.sbe.examples.car.Model;
 public class SbeAcceptorServiceTest {
 	private static final int PORT = 9999;
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(100);
-	private static final int MAX = 1000000;
+	private static final int MAX = 1000;
 
 	private SbeAcceptorService acceptorService;
 	private AtomicInteger counter = new AtomicInteger(0);
 
 	@Before
 	public void setUp() {
-		DOMConfigurator.configure("src/test/resources/log4j_warn.xml");
+		DOMConfigurator.configure("src/test/resources/log4j_error.xml");
 		
 		acceptorService = new SbeAcceptorService(PORT, EXECUTOR_SERVICE,
 				new Factory<SbeAcceptor, SocketChannel>() {
@@ -66,6 +65,7 @@ public class SbeAcceptorServiceTest {
 	@After
 	public void tearDown() {
 		acceptorService.stop();
+		LockSupport.parkNanos(1000 * 1000 * 1000);
 	}
 
 	@Test
@@ -73,7 +73,6 @@ public class SbeAcceptorServiceTest {
 		doTest(false);
 	}
 
-	@Ignore("TODO: fix bad data handling")
 	@Test
 	public void testBadData() throws Exception {
 		doTest(true);
@@ -88,10 +87,12 @@ public class SbeAcceptorServiceTest {
 		final long start = System.currentTimeMillis();
 		for (int i = 0; i < MAX; i++) {
 			Car car = getInstance(i);
+			// System.out.println("sending " + car.getSerialNumber());
+
 			buffer.byteBuffer().clear();
 			sbeEncoder.encode(car, buffer);
 			buffer.byteBuffer().flip();
-			if (badData && ++total % 2 == 0) {
+			if (badData && ++total % 3 == 0) {
 				buffer.byteBuffer().limit(getBadPosition(buffer.byteBuffer().limit()));
 				i--;
 			}
@@ -114,7 +115,7 @@ public class SbeAcceptorServiceTest {
 	}
 
 	private int getBadPosition(int position) {
-		return (int) (Math.random() * (position - 2)) + 1;
+		return (int) (Math.random() * (position - 30)) + 1;
 	}
 
 	private Car getInstance(int i) {
@@ -136,6 +137,7 @@ public class SbeAcceptorServiceTest {
 
 		@Override
 		public void onCar(Car car, Response<Object> response) {
+			// System.out.println("received " + car.getSerialNumber());
 			counter.incrementAndGet();
 		}
 

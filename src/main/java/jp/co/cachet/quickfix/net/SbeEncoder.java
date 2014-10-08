@@ -32,10 +32,10 @@ public class SbeEncoder {
 	public void encode(jp.co.cachet.quickfix.entity.Car car, DirectBuffer buffer, int bufferIndex)
 			throws UnsupportedEncodingException {
 		header.wrap(buffer, bufferIndex, ACTING_VERSION)
-				.blockLength(bodyCar.sbeBlockLength())
-				.templateId(bodyCar.sbeTemplateId())
-				.schemaId(bodyCar.sbeSchemaId())
-				.version(bodyCar.sbeSchemaVersion());
+				.blockLength(Car.BLOCK_LENGTH)
+				.templateId(Car.TEMPLATE_ID)
+				.schemaId(Car.SCHEMA_ID)
+				.version(Car.SCHEMA_VERSION);
 
 		bodyCar.wrapForEncode(buffer, bufferIndex + header.size())
 				.code(car.getCode())

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
 import jp.co.cachet.quickfix.entity.Car;
@@ -43,18 +43,21 @@ public abstract class SbeAcceptor implements Runnable, Closeable, Response<Objec
 
 				Object decoded = null;
 				while ((decoded = sbeDecoder.decode(decodeBuffer, true)) != null) {
+					Car decodedCar = (Car) decoded;
 					onCar((Car) decoded, this);
+					log.info("received {}", decodedCar.getSerialNumber());
 				}
 
 				final int position = decodeBuffer.byteBuffer().position();
 				remaining = limit - position;
 				decodeBuffer.byteBuffer().clear();
 				if (remaining > 0) {
-					log.warn("remain={}, limit={}, position={}", remaining, limit, position);
+					log.warn("remain={}, position={}, limit={}", remaining, position, limit);
+					decodeBuffer.getBytes(position, decodeBuffer, 0, remaining);
 					decodeBuffer.byteBuffer().position(remaining);
 				}
 			}
-		} catch (AsynchronousCloseException ignored) {
+		} catch (ClosedChannelException ignored) {
 		} catch (Exception e) {
 			log.error("", e);
 		}
