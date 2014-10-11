@@ -49,6 +49,7 @@ public class SbeDecoderEncoderTest {
 		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(1024).order(ByteOrder.nativeOrder()));
 
 		sbeEncoder.encode(car, buffer, buffer.byteBuffer().position());
+		buffer.byteBuffer().clear();
 		Car decoded = (Car) sbeDecoder.decode(buffer, buffer.byteBuffer().position());
 
 		doAssertEquals(car, decoded);

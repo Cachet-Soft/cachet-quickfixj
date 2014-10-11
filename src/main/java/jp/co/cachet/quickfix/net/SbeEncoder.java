@@ -24,9 +24,6 @@ public class SbeEncoder {
 			throws UnsupportedEncodingException {
 		final int position = buffer.byteBuffer().position();
 		encode(car, buffer, position);
-		final int blockLength = bodyCar.size();
-		buffer.byteBuffer().position(position + header.size() + blockLength);
-		log.info("position = {}", buffer.byteBuffer().position());
 	}
 
 	public void encode(jp.co.cachet.quickfix.entity.Car car, DirectBuffer buffer, int bufferIndex)
@@ -75,5 +72,8 @@ public class SbeEncoder {
 
 		byte[] model = car.getModel().getBytes("UTF-8");
 		bodyCar.putModel(model, 0, model.length);
+
+		buffer.byteBuffer().position(bodyCar.limit());
+		log.info("position = {}", buffer.byteBuffer().position());
 	}
 }

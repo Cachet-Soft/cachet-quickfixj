@@ -19,7 +19,9 @@ import jp.co.cachet.quickfix.entity.OptionalExtras;
 import jp.co.cachet.quickfix.entity.PerformanceFigure;
 import jp.co.cachet.quickfix.net.SbeAcceptor;
 import jp.co.cachet.quickfix.net.SbeAcceptorService;
+import jp.co.cachet.quickfix.net.SbeInitiator;
 import jp.co.cachet.quickfix.net.SbeInitiatorService;
+import jp.co.cachet.quickfix.net.SbeSession;
 import jp.co.cachet.quickfix.util.Factory;
 import jp.co.cachet.quickfix.util.Response;
 
@@ -31,7 +33,7 @@ import org.junit.Test;
 import uk.co.real_logic.sbe.examples.car.BooleanType;
 import uk.co.real_logic.sbe.examples.car.Model;
 
-public class SbeInitiatorServiceTest {
+public class SbeInitiatorServiceTest implements Response<Object> {
 	private static final int PORT = 9999;
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(100);
 	private static final int MAX = 1000000;
@@ -61,20 +63,16 @@ public class SbeInitiatorServiceTest {
 		acceptorService.start();
 
 		initiatorService = new SbeInitiatorService("localhost", PORT, EXECUTOR_SERVICE, 1,
-				new Factory<SbeAcceptor, SocketChannel>() {
+				new Factory<SbeInitiator, SocketChannel>() {
 
 					@Override
-					public SbeAcceptor getInstance(SocketChannel arg) {
+					public SbeInitiator getInstance(SocketChannel arg) {
 						try {
-							return new SbeAcceptor(arg) {
-								@Override
-								public void onCar(Car car, Response<Object> response) {
-									counter.incrementAndGet();
-								}
-							};
-						} catch (Exception e) {
-							throw new IllegalStateException(e);
+							return new SbeInitiator(arg);
+						} catch (SocketException e) {
+							e.printStackTrace();
 						}
+						return null;
 					}
 
 				});
@@ -92,7 +90,7 @@ public class SbeInitiatorServiceTest {
 		final long start = System.currentTimeMillis();
 		for (int i = 0; i < MAX; i++) {
 			Car car = getInstance(i);
-			initiatorService.send(car);
+			initiatorService.send(car, this);
 		}
 
 		final long done = System.currentTimeMillis();
@@ -118,6 +116,12 @@ public class SbeInitiatorServiceTest {
 				"BMW", "323i");
 	}
 
+	@Override
+	public void onResponse(Object arg) {
+		counter.incrementAndGet();
+
+	}
+
 	class SbeAcceptorImpl extends SbeAcceptor {
 
 		public SbeAcceptorImpl(SocketChannel socket) throws SocketException {
@@ -125,23 +129,23 @@ public class SbeInitiatorServiceTest {
 		}
 
 		@Override
-		public void onCar(Car car, Response<Object> response) {
-			SCHEDULER.execute(new SbeActor(car, response));
+		public void onCar(Car car, SbeSession session) {
+			SCHEDULER.execute(new SbeActor(car, session));
 		}
 	}
-	
+
 	class SbeActor implements Runnable {
 		private final Car car;
-		private final Response<Object> response;
-		
-		public SbeActor(Car car, Response<Object> response) {
+		private final SbeSession session;
+
+		public SbeActor(Car car, SbeSession session) {
 			this.car = car;
-			this.response = response;
+			this.session = session;
 		}
 
 		@Override
 		public void run() {
-				response.onResponse(car);
+			session.send(car);
 		}
 	}
 		

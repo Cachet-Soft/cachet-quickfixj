@@ -22,8 +22,8 @@ import jp.co.cachet.quickfix.entity.PerformanceFigure;
 import jp.co.cachet.quickfix.net.SbeAcceptor;
 import jp.co.cachet.quickfix.net.SbeAcceptorService;
 import jp.co.cachet.quickfix.net.SbeEncoder;
+import jp.co.cachet.quickfix.net.SbeSession;
 import jp.co.cachet.quickfix.util.Factory;
-import jp.co.cachet.quickfix.util.Response;
 
 import org.apache.log4j.xml.DOMConfigurator;
 import org.junit.After;
@@ -37,14 +37,14 @@ import uk.co.real_logic.sbe.examples.car.Model;
 public class SbeAcceptorServiceTest {
 	private static final int PORT = 9999;
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(100);
-	private static final int MAX = 1000;
+	private static final int MAX = 10;
 
 	private SbeAcceptorService acceptorService;
 	private AtomicInteger counter = new AtomicInteger(0);
 
 	@Before
 	public void setUp() {
-		DOMConfigurator.configure("src/test/resources/log4j_error.xml");
+		DOMConfigurator.configure("src/test/resources/log4j.xml");
 		
 		acceptorService = new SbeAcceptorService(PORT, EXECUTOR_SERVICE,
 				new Factory<SbeAcceptor, SocketChannel>() {
@@ -115,7 +115,7 @@ public class SbeAcceptorServiceTest {
 	}
 
 	private int getBadPosition(int position) {
-		return (int) (Math.random() * (position - 30)) + 1;
+		return (int) (Math.random() * (position - 40)) + 10;
 	}
 
 	private Car getInstance(int i) {
@@ -136,7 +136,7 @@ public class SbeAcceptorServiceTest {
 		}
 
 		@Override
-		public void onCar(Car car, Response<Object> response) {
+		public void onCar(Car car, SbeSession session) {
 			// System.out.println("received " + car.getSerialNumber());
 			counter.incrementAndGet();
 		}

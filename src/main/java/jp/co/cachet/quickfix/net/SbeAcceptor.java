@@ -9,14 +9,13 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
 import jp.co.cachet.quickfix.entity.Car;
-import jp.co.cachet.quickfix.util.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.co.real_logic.sbe.codec.java.DirectBuffer;
 
-public abstract class SbeAcceptor implements Runnable, Closeable, Response<Object>, SbeApplication {
+public abstract class SbeAcceptor implements Runnable, Closeable, SbeSession, SbeApplication {
 	private static final Logger log = LoggerFactory.getLogger(SbeAcceptor.class);
 
 	private final SocketChannel socket;
@@ -63,6 +62,7 @@ public abstract class SbeAcceptor implements Runnable, Closeable, Response<Objec
 		}
 	}
 
+	@Override
 	public void send(Object message) {
 		try {
 			if (message instanceof Car) {
@@ -77,11 +77,6 @@ public abstract class SbeAcceptor implements Runnable, Closeable, Response<Objec
 		} catch (Exception e) {
 			log.error("", e);
 		}
-	}
-
-	@Override
-	public void onResponse(Object message) {
-		send(message);
 	}
 
 	@Override

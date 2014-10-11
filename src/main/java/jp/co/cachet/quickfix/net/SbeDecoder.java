@@ -27,7 +27,7 @@ public class SbeDecoder {
 	private final Car bodyCar = new Car();
 	private final byte[] tempBuffer = new byte[128];
 
-	public boolean canDecode(DirectBuffer buffer, int newPosition) {
+	public static boolean canDecode(DirectBuffer buffer, int newPosition) {
 		return (newPosition > buffer.byteBuffer().limit() || newPosition < 0) ? false : true;
 	}
 
@@ -39,7 +39,6 @@ public class SbeDecoder {
 		Object decoded = null;
 		try {
 			decoded = decode(buffer, buffer.byteBuffer().position(), rescue);
-			log.info("position = {}", buffer.byteBuffer().position());
 		} catch (Exception e) {
 			log.error("", e);
 		}
@@ -77,6 +76,7 @@ public class SbeDecoder {
 		}
 
 		if (rescue) {
+			log.info("bufferIndex:{}", bufferIndex);
 			return decode(buffer, ++bufferIndex, rescue);
 		}
 
@@ -92,7 +92,6 @@ public class SbeDecoder {
 		}
 
 		body.wrapForDecode(buffer, bufferIndex, header.blockLength(), header.version());
-		buffer.byteBuffer().position(body.limit());
 
 		long serialNumber = body.serialNumber();
 		int modelYear = body.modelYear();
@@ -154,6 +153,8 @@ public class SbeDecoder {
 		String make = new String(tempBuffer, 0, body.getMake(tempBuffer, 0, tempBuffer.length), "UTF-8");
 		String model = new String(tempBuffer, 0, body.getModel(tempBuffer, 0, tempBuffer.length), "UTF-8");
 
+		buffer.byteBuffer().position(body.limit());
+		log.info("position = {}", buffer.byteBuffer().position());
 		return new jp.co.cachet.quickfix.entity.Car(
 				serialNumber, modelYear, available, code, someNumbers, vehicleCode, extras, engine, fuelFigures,
 				performanceFigures, make, model);
