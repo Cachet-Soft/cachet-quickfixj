@@ -1,6 +1,7 @@
 package jp.co.cachet.net;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -29,22 +30,26 @@ import org.apache.log4j.xml.DOMConfigurator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.co.real_logic.sbe.codec.java.DirectBuffer;
 import uk.co.real_logic.sbe.examples.car.BooleanType;
 import uk.co.real_logic.sbe.examples.car.Model;
 
 public class SbeAcceptorServiceTest {
+	private static final Logger log = LoggerFactory.getLogger(SbeAcceptorServiceTest.class);
+
 	private static final int PORT = 9999;
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(100);
-	private static final int MAX = 10;
+	private static final int MAX = 100000;
 
 	private SbeAcceptorService acceptorService;
 	private AtomicInteger counter = new AtomicInteger(0);
 
 	@Before
 	public void setUp() {
-		DOMConfigurator.configure("src/test/resources/log4j.xml");
+		DOMConfigurator.configure("src/test/resources/log4j_warn.xml");
 		
 		acceptorService = new SbeAcceptorService(PORT, EXECUTOR_SERVICE,
 				new Factory<SbeAcceptor, SocketChannel>() {
@@ -73,6 +78,11 @@ public class SbeAcceptorServiceTest {
 		doTest(false);
 	}
 
+	/**
+	 * 不良データでもどれだけデコードできるかのテスト。
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void testBadData() throws Exception {
 		doTest(true);
@@ -98,12 +108,13 @@ public class SbeAcceptorServiceTest {
 			}
 
 			while (buffer.byteBuffer().hasRemaining()) {
-				socket.write(buffer.byteBuffer());
+				int sentByte = socket.write(buffer.byteBuffer());
+				log.info("Sent {} {}", car.getSerialNumber(), sentByte);
 			}
 		}
 
 		final long done = System.currentTimeMillis();
-		while (MAX > counter.get() && (System.currentTimeMillis() - done) < 10000) {
+		while (MAX > counter.get() && (System.currentTimeMillis() - done) < 1000) {
 			LockSupport.parkNanos(1);
 		}
 		final long end = System.currentTimeMillis();
@@ -111,7 +122,13 @@ public class SbeAcceptorServiceTest {
 
 		System.out.printf("count=%d, elapsed=%d ms, throuput=%.1f /s, latency=%.1f us%n",
 				counter.get(), elapsed, counter.get() * 1000D / elapsed, elapsed * 1000D / counter.get());
-		assertEquals(MAX, counter.get());
+
+		if (badData) {
+			// エンコードデータに識別可能なデータが埋め込まれていないので、90%読み込めたらOKにします。
+			assertTrue(MAX * 0.9 <= counter.get());
+		} else {
+			assertEquals(MAX, counter.get());
+		}
 	}
 
 	private int getBadPosition(int position) {

@@ -11,32 +11,34 @@ import uk.co.real_logic.sbe.examples.car.Model;
  * 
  * @author masaaki
  * 
- *         <code>
-	 <message name="Car" id="1" description="Description of a basic Car">
-		 <field name="serialNumber" id="1" type="uint32"/>
-		 <field name="modelYear" id="2" type="ModelYear"/>
-		 <field name="available" id="3" type="BooleanType"/>
-		 <field name="code" id="4" type="Model"/>
-		 <field name="someNumbers" id="5" type="someNumbers"/>
-		 <field name="vehicleCode" id="6" type="VehicleCode"/>
-		 <field name="extras" id="7" type="OptionalExtras"/>
-		 <field name="engine" id="8" type="Engine"/>
-		 <group name="fuelFigures" id="9" dimensionType="groupSizeEncoding">
-			 <field name="speed" id="10" type="uint16"/>
-			 <field name="mpg" id="11" type="float"/>
-		 </group>
-		 <group name="performanceFigures" id="12"
-			 dimensionType="groupSizeEncoding">
-			 <field name="octaneRating" id="13" type="uint8"/>
-			 <group name="acceleration" id="14" dimensionType="groupSizeEncoding">
-				 <field name="mph" id="15" type="uint16"/>
-				 <field name="seconds" id="16" type="float"/>
-			 </group>
-		 </group>
-		 <data name="make" id="17" type="varDataEncoding"/>
-		 <data name="model" id="18" type="varDataEncoding"/>
-	 </message>
- * </code>
+ *         <pre>
+ * {@code
+ * <message name="Car" id="1" description="Description of a basic Car">
+ * 		 <field name="serialNumber" id="1" type="uint32"/>
+ * 		 <field name="modelYear" id="2" type="ModelYear"/>
+ * 		 <field name="available" id="3" type="BooleanType"/>
+ * 		 <field name="code" id="4" type="Model"/>
+ * 		 <field name="someNumbers" id="5" type="someNumbers"/>
+ * 		 <field name="vehicleCode" id="6" type="VehicleCode"/>
+ * 		 <field name="extras" id="7" type="OptionalExtras"/>
+ * 		 <field name="engine" id="8" type="Engine"/>
+ * 		 <group name="fuelFigures" id="9" dimensionType="groupSizeEncoding">
+ * 			 <field name="speed" id="10" type="uint16"/>
+ * 			 <field name="mpg" id="11" type="float"/>
+ * 		 </group>
+ * 		 <group name="performanceFigures" id="12"
+ * 			 dimensionType="groupSizeEncoding">
+ * 			 <field name="octaneRating" id="13" type="uint8"/>
+ * 			 <group name="acceleration" id="14" dimensionType="groupSizeEncoding">
+ * 				 <field name="mph" id="15" type="uint16"/>
+ * 				 <field name="seconds" id="16" type="float"/>
+ * 			 </group>
+ * 		 </group>
+ * 		 <data name="make" id="17" type="varDataEncoding"/>
+ * 		 <data name="model" id="18" type="varDataEncoding"/>
+ * </message>
+ * }
+ * </pre>
  */
 public class Car {
 

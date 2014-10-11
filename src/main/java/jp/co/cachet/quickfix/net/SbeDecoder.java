@@ -21,7 +21,6 @@ import uk.co.real_logic.sbe.examples.car.OptionalExtras;
 
 public class SbeDecoder {
 	private static final Logger log = LoggerFactory.getLogger(SbeDecoder.class);
-	private static final int ACTING_VERSION = 0;
 
 	private final MessageHeader header = new MessageHeader();
 	private final Car bodyCar = new Car();
@@ -55,7 +54,7 @@ public class SbeDecoder {
 			return null;
 		}
 
-		header.wrap(buffer, bufferIndex, ACTING_VERSION);
+		header.wrap(buffer, bufferIndex, SbeEncoder.ACTING_VERSION);
 		final int blockLength = header.blockLength();
 		final int templateId = header.templateId();
 		final int schemaId = header.schemaId();

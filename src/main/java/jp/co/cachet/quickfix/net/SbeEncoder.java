@@ -14,8 +14,9 @@ import uk.co.real_logic.sbe.examples.car.Car;
 import uk.co.real_logic.sbe.examples.car.MessageHeader;
 
 public class SbeEncoder {
+	public static final int ACTING_VERSION = 3;
+
 	private static final Logger log = LoggerFactory.getLogger(SbeEncoder.class);
-	private static final int ACTING_VERSION = 0;
 
 	private final MessageHeader header = new MessageHeader();
 	private final Car bodyCar = new Car();
