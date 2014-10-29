@@ -60,11 +60,12 @@ public class SbeDecoder {
 		final int schemaId = header.schemaId();
 		final int version = header.version();
 
+		Object decoded = null;
 		try {
 			switch (templateId) {
 			case Car.TEMPLATE_ID:
 				if (blockLength == Car.BLOCK_LENGTH && schemaId == Car.SCHEMA_ID && version == Car.SCHEMA_VERSION) {
-					return decode(buffer, bufferIndex + header.size(), bodyCar);
+					decoded = decode(buffer, bufferIndex + header.size(), bodyCar);
 				}
 				break;
 			default:
@@ -72,6 +73,10 @@ public class SbeDecoder {
 			}
 		} catch (Exception e) {
 			log.warn("bufferIndex:{} templatedId:{} excetion:{}", bufferIndex, templateId, e);
+		}
+
+		if (decoded != null) {
+			return decoded;
 		}
 
 		if (rescue) {
@@ -151,6 +156,11 @@ public class SbeDecoder {
 
 		String make = new String(tempBuffer, 0, body.getMake(tempBuffer, 0, tempBuffer.length), "UTF-8");
 		String model = new String(tempBuffer, 0, body.getModel(tempBuffer, 0, tempBuffer.length), "UTF-8");
+
+		// ペイロード長でデコード結果を検証
+		if (header.payloadLength() != body.size()) {
+			return null;
+		}
 
 		buffer.byteBuffer().position(body.limit());
 		log.info("position = {}", buffer.byteBuffer().position());

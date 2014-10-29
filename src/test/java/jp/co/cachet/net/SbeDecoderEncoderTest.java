@@ -72,7 +72,7 @@ public class SbeDecoderEncoderTest {
 				fuelFigures, performanceFigures,
 				"Audi", "A4");
 
-		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(130).order(ByteOrder.nativeOrder()));
+		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(131).order(ByteOrder.nativeOrder()));
 
 		sbeEncoder.encode(car0, buffer);
 		sbeEncoder.encode(car1, buffer);
@@ -110,7 +110,7 @@ public class SbeDecoderEncoderTest {
 				fuelFigures, performanceFigures,
 				"Audi", "A4");
 
-		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(130).order(ByteOrder.nativeOrder()));
+		DirectBuffer buffer = new DirectBuffer(ByteBuffer.allocate(131).order(ByteOrder.nativeOrder()));
 		DirectBuffer badBuffer = new DirectBuffer(ByteBuffer.allocate(1024).order(ByteOrder.nativeOrder()));
 
 		sbeEncoder.encode(car0, buffer);

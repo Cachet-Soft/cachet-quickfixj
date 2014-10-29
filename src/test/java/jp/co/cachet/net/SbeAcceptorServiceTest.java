@@ -42,15 +42,15 @@ public class SbeAcceptorServiceTest {
 
 	private static final int PORT = 9999;
 	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(100);
-	private static final int MAX = 100000;
+	private static final int MAX = 1000000;
 
 	private SbeAcceptorService acceptorService;
 	private AtomicInteger counter = new AtomicInteger(0);
 
 	@Before
 	public void setUp() {
-		DOMConfigurator.configure("src/test/resources/log4j_warn.xml");
-		
+		DOMConfigurator.configure("src/test/resources/log4j_error.xml");
+
 		acceptorService = new SbeAcceptorService(PORT, EXECUTOR_SERVICE,
 				new Factory<SbeAcceptor, SocketChannel>() {
 
@@ -80,7 +80,7 @@ public class SbeAcceptorServiceTest {
 
 	/**
 	 * 不良データでもどれだけデコードできるかのテスト。
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	@Test

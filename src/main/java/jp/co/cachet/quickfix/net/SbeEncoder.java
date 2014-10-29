@@ -74,6 +74,8 @@ public class SbeEncoder {
 		byte[] model = car.getModel().getBytes("UTF-8");
 		bodyCar.putModel(model, 0, model.length);
 
+		// ペイロード長をヘッダへ設定
+		header.payloadLength(bodyCar.size());
 		buffer.byteBuffer().position(bodyCar.limit());
 		log.info("position = {}", buffer.byteBuffer().position());
 	}
