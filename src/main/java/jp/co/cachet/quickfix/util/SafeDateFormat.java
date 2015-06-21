@@ -3,8 +3,18 @@ package jp.co.cachet.quickfix.util;
 import java.util.TimeZone;
 
 public class SafeDateFormat {
-	static int EPOC_DAYS = getFairfieldDays(1970, 1, 1);
-	static long TZ_OFFSET = TimeZone.getDefault().getRawOffset();
+	static final int EPOC_DAYS = getFairfieldDays(1970, 1, 1);
+
+	static final String PATTERN_CHARS = "yMdHmsS";
+	static final int PATTERN_YEAR = 0;
+	static final int PATTERN_MONTH = 1;
+	static final int PATTERN_DAY = 2;
+	static final int PATTERN_HOURS = 3;
+	static final int PATTERN_MINUTES = 4;
+	static final int PATTERN_SECONDS = 5;
+	static final int PATTERN_MILLIS = 6;
+
+	static final int[] MONTH_DAYS = new int[] { 0, 0, 0, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275, 306, 337, 366 };
 
 	public static int getFairfieldDays(int year, int month, int day) {
 		if (month < 3) {
@@ -19,19 +29,102 @@ public class SafeDateFormat {
 		for (; beginIndex < endIndex; beginIndex++) {
 			char c = source.charAt(beginIndex);
 			if (c < '0' || c > '9') {
-				throw new NumberFormatException(source);
+				throw new NumberFormatException(
+						String.format("%s beginIndex=%s endIndex=%d", source, beginIndex, endIndex));
 			}
 			value = value * 10 + c - '0';
 		}
 		return value;
 	}
 
+	private final long timeZoneOffset;
+	private final char[] compiledPattern;
+
+	public SafeDateFormat(String pattern) {
+		this(pattern, TimeZone.getDefault());
+	}
+
+	public SafeDateFormat(String pattern, TimeZone timeZone) {
+		timeZoneOffset = timeZone.getRawOffset();
+		compiledPattern = compile(pattern);
+	}
+
+	private char[] compile(String pattern) {
+		int length = pattern.length();
+		StringBuilder sb = new StringBuilder(length);
+		int lastCode = -1;
+		for (int i = 0; i < length; i++) {
+			char c = pattern.charAt(i);
+			int code = PATTERN_CHARS.indexOf(c);
+			if (lastCode >= 0 && lastCode != code) {
+				sb.append((char) lastCode);
+			} else if (c >= PATTERN_CHARS.length() && c < ' ') {
+				throw new IllegalArgumentException("'" + c + "'");
+			}
+			if (code < 0) {
+				sb.append(c);
+			}
+			lastCode = code;
+		}
+		if (lastCode >= 0) {
+			sb.append((char) lastCode);
+		}
+
+		int len = sb.length();
+		char[] dst = new char[len];
+		sb.getChars(0, len, dst, 0);
+		return dst;
+	}
+
 	public long parse(String source) {
-		int year = parseInt(source, 0, 4);
-		int month = parseInt(source, 4, 6);
-		int day = parseInt(source, 6, 8);
+		int year = 1970;
+		int month = 1;
+		int day = 1;
+		int hours = 0;
+		int minutes = 0;
+		int seconds = 0;
+		int millis = 0;
+
+		int pos = 0;
+		for (char c : compiledPattern) {
+			switch (c) {
+			case PATTERN_YEAR:
+				year = parseInt(source, pos, pos + 4);
+				pos += 4;
+				break;
+			case PATTERN_MONTH:
+				month = parseInt(source, pos, pos + 2);
+				pos += 2;
+				break;
+			case PATTERN_DAY:
+				day = parseInt(source, pos, pos + 2);
+				pos += 2;
+				break;
+			case PATTERN_HOURS:
+				hours = parseInt(source, pos, pos + 2);
+				pos += 2;
+				break;
+			case PATTERN_MINUTES:
+				minutes = parseInt(source, pos, pos + 2);
+				pos += 2;
+				break;
+			case PATTERN_SECONDS:
+				seconds = parseInt(source, pos, pos + 2);
+				pos += 2;
+				break;
+			case PATTERN_MILLIS:
+				millis = parseInt(source, pos, pos + 3);
+				pos += 3;
+				break;
+			default:
+				pos++;
+				break;
+			}
+		}
+
 		int fairFieldDays = getFairfieldDays(year, month, day);
-		return (fairFieldDays - EPOC_DAYS) * 86400000L - TZ_OFFSET;
+		return (fairFieldDays - EPOC_DAYS) * 86400000L - timeZoneOffset
+				+ hours * 3600000L + minutes * 60000L + seconds * 1000L + millis;
 	}
 
 	public String format(long date) {
@@ -39,7 +132,7 @@ public class SafeDateFormat {
 	}
 
 	public StringBuilder format(long date, StringBuilder toAppendTo) {
-		date += TZ_OFFSET;
+		date += timeZoneOffset;
 
 		int fairfieldDays = (int) (date / 86400000L) + EPOC_DAYS;
 		int year = fairfieldDays / 365;
@@ -50,28 +143,78 @@ public class SafeDateFormat {
 		}
 		int daysFromYear = fairfieldDays - begginingOfYear;
 		int month = daysFromYear / 30 + 3;
+		// 配列アクセスより計算の方が速いようだ。。。
+		// int begginingOfMonth = MONTH_DAYS[month];
+		// if (begginingOfMonth > daysFromYear) {
+		// month--;
+		// begginingOfMonth = MONTH_DAYS[month];
+		// }
+		// int day = daysFromYear - begginingOfMonth + 1;
 		int begginingOfMonth = getFairfieldDays(year, month, 1);
-		if (getFairfieldDays(year, month, 1) > fairfieldDays) {
+		if (begginingOfMonth > fairfieldDays) {
 			month--;
 			begginingOfMonth = getFairfieldDays(year, month, 1);
 		}
 		int day = fairfieldDays - begginingOfMonth + 1;
-
 		if (month > 12) {
 			year++;
 			month -= 12;
 		}
-		toAppendTo.append(year);
-		if (month < 10) {
-			toAppendTo.append('0');
+
+		int times = (int) (date % 86400000L);
+		int hours = times / 3600000;
+		times %= 3600000;
+		int minutes = times / 60000;
+		times %= 60000;
+		int seconds = times / 1000;
+		int millis = times % 1000;
+
+		for (char c : compiledPattern) {
+			switch (c) {
+			case PATTERN_YEAR:
+				toAppendTo.append(year);
+				break;
+			case PATTERN_MONTH:
+				appendTwo(month, toAppendTo);
+				break;
+			case PATTERN_DAY:
+				appendTwo(day, toAppendTo);
+				break;
+			case PATTERN_HOURS:
+				appendTwo(hours, toAppendTo);
+				break;
+			case PATTERN_MINUTES:
+				appendTwo(minutes, toAppendTo);
+				break;
+			case PATTERN_SECONDS:
+				appendTwo(seconds, toAppendTo);
+				break;
+			case PATTERN_MILLIS:
+				appendThree(millis, toAppendTo);
+				break;
+			default:
+				toAppendTo.append(c);
+				break;
+			}
 		}
-		toAppendTo.append(month);
-		if (day < 10) {
-			toAppendTo.append('0');
-		}
-		toAppendTo.append(day);
 
 		return toAppendTo;
+	}
+
+	private void appendTwo(int dateElement, StringBuilder toAppendTo) {
+		if (dateElement < 10) {
+			toAppendTo.append('0');
+		}
+		toAppendTo.append(dateElement);
+	}
+
+	private void appendThree(int dateElement, StringBuilder toAppendTo) {
+		if (dateElement < 100) {
+			toAppendTo.append("00");
+		} else if (dateElement < 10) {
+			toAppendTo.append('0');
+		}
+		toAppendTo.append(dateElement);
 	}
 
 }
