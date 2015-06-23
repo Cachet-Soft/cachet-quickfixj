@@ -24,7 +24,7 @@ public class SafeDateFormat {
 		return 365 * year + (year / 4) - (year / 100) + (year / 400) + (306 * (month + 1) / 10) + day - 428;
 	}
 
-	public static int parseInt(String source, int beginIndex, int endIndex) {
+	public static int parseInt(CharSequence source, int beginIndex, int endIndex) {
 		int value = 0;
 		for (; beginIndex < endIndex; beginIndex++) {
 			char c = source.charAt(beginIndex);
@@ -39,6 +39,7 @@ public class SafeDateFormat {
 
 	private final long timeZoneOffset;
 	private final char[] compiledPattern;
+	private final boolean needFairfieldDays;
 
 	public SafeDateFormat(String pattern) {
 		this(pattern, TimeZone.getDefault());
@@ -47,6 +48,14 @@ public class SafeDateFormat {
 	public SafeDateFormat(String pattern, TimeZone timeZone) {
 		timeZoneOffset = timeZone.getRawOffset();
 		compiledPattern = compile(pattern);
+		boolean _needFairfieldDays = false;
+		for (char c : compiledPattern) {
+			if (c <= PATTERN_DAY) {
+				_needFairfieldDays = true;
+				break;
+			}
+		}
+		needFairfieldDays = _needFairfieldDays;
 	}
 
 	private char[] compile(String pattern) {
@@ -76,7 +85,7 @@ public class SafeDateFormat {
 		return dst;
 	}
 
-	public long parse(String source) {
+	public long parse(CharSequence source) {
 		int year = 1970;
 		int month = 1;
 		int day = 1;
@@ -133,32 +142,41 @@ public class SafeDateFormat {
 
 	public StringBuilder format(long date, StringBuilder toAppendTo) {
 		date += timeZoneOffset;
+		if (date < 0) {
+			throw new IllegalArgumentException();
+		}
 
-		int fairfieldDays = (int) (date / 86400000L) + EPOC_DAYS;
-		int year = fairfieldDays / 365;
-		int begginingOfYear = getFairfieldDays(year, 3, 1);
-		if (begginingOfYear > fairfieldDays) {
-			year--;
-			begginingOfYear = getFairfieldDays(year, 3, 1);
-		}
-		int daysFromYear = fairfieldDays - begginingOfYear;
-		int month = daysFromYear / 30 + 3;
-		// 配列アクセスより計算の方が速いようだ。。。
-		// int begginingOfMonth = MONTH_DAYS[month];
-		// if (begginingOfMonth > daysFromYear) {
-		// month--;
-		// begginingOfMonth = MONTH_DAYS[month];
-		// }
-		// int day = daysFromYear - begginingOfMonth + 1;
-		int begginingOfMonth = getFairfieldDays(year, month, 1);
-		if (begginingOfMonth > fairfieldDays) {
-			month--;
-			begginingOfMonth = getFairfieldDays(year, month, 1);
-		}
-		int day = fairfieldDays - begginingOfMonth + 1;
-		if (month > 12) {
-			year++;
-			month -= 12;
+		int year = 1970;
+		int month = 1;
+		int day = 1;
+
+		if (needFairfieldDays) {
+			int fairfieldDays = (int) (date / 86400000L) + EPOC_DAYS;
+			year = fairfieldDays / 365;
+			int begginingOfYear = getFairfieldDays(year, 3, 1);
+			if (begginingOfYear > fairfieldDays) {
+				year--;
+				begginingOfYear = getFairfieldDays(year, 3, 1);
+			}
+			int daysFromYear = fairfieldDays - begginingOfYear;
+			month = daysFromYear / 30 + 3;
+			// 配列アクセスより計算の方が速いようだ。。。
+			// int begginingOfMonth = MONTH_DAYS[month];
+			// if (begginingOfMonth > daysFromYear) {
+			// month--;
+			// begginingOfMonth = MONTH_DAYS[month];
+			// }
+			// int day = daysFromYear - begginingOfMonth + 1;
+			int begginingOfMonth = getFairfieldDays(year, month, 1);
+			if (begginingOfMonth > fairfieldDays) {
+				month--;
+				begginingOfMonth = getFairfieldDays(year, month, 1);
+			}
+			day = fairfieldDays - begginingOfMonth + 1;
+			if (month > 12) {
+				year++;
+				month -= 12;
+			}
 		}
 
 		int times = (int) (date % 86400000L);

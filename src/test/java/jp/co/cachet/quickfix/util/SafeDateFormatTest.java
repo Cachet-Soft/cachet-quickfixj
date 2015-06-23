@@ -73,6 +73,24 @@ public class SafeDateFormatTest {
 		}
 		ns1 = System.nanoTime() - nsStart;
 		System.out.printf("parse() latency SafeDateFormat(%,d ns) SimpleDateFormat(%,d ns)\n", ns0, ns1);
+
+		// format(timeOnly) latency確認
+		safe = new SafeDateFormat("HH:mm:ss.SSS");
+		sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+		nsStart = System.nanoTime();
+		for (int i = 0; i < max; i++) {
+			builder.setLength(0);
+			safe.format(System.currentTimeMillis(), builder);
+		}
+		ns0 = System.nanoTime() - nsStart;
+
+		nsStart = System.nanoTime();
+		for (int i = 0; i < max; i++) {
+			buffer.setLength(0);
+			sdf.format(new Date(), buffer, pos);
+		}
+		ns1 = System.nanoTime() - nsStart;
+		System.out.printf("format(timeOnly) latency SafeDateFormat(%,d ns) SimpleDateFormat(%,d ns)\n", ns0, ns1);
 	}
 
 }
