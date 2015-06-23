@@ -15,7 +15,7 @@ public class SafeDateFormatTest {
 	@Test
 	public void test() throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss.SSS");
-		SafeDateFormat safe = new SafeDateFormat("yyyy/MM/dd-HH:mm:ss.SSS");
+		SafeDateFormat safe = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS");
 
 		String lastYear = "1970";
 		long ms = 0;
@@ -36,10 +36,10 @@ public class SafeDateFormatTest {
 		}
 
 		// TimeZone確認
-		SafeDateFormat safeUtc = new SafeDateFormat("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("UTC"));
+		SafeDateFormat safeUtc = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("UTC"));
 		assertEquals("1970/01/01-00:00:00.000", safeUtc.format(0));
 
-		int max = 100000;
+		int max = 1000000;
 		StringBuilder builder = new StringBuilder(23);
 		StringBuffer buffer = new StringBuffer(23);
 		FieldPosition pos = new FieldPosition(0);
@@ -75,7 +75,7 @@ public class SafeDateFormatTest {
 		System.out.printf("parse() latency SafeDateFormat(%,d ns) SimpleDateFormat(%,d ns)\n", ns0, ns1);
 
 		// format(timeOnly) latency確認
-		safe = new SafeDateFormat("HH:mm:ss.SSS");
+		safe = SafeDateFormat.getInstance("HH:mm:ss.SSS");
 		sdf = new SimpleDateFormat("HH:mm:ss.SSS");
 		nsStart = System.nanoTime();
 		for (int i = 0; i < max; i++) {

@@ -1,5 +1,7 @@
 package jp.co.cachet.quickfix.util;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 
 public class SafeDateFormat {
@@ -15,6 +17,26 @@ public class SafeDateFormat {
 	static final int PATTERN_MILLIS = 6;
 
 	static final int[] MONTH_DAYS = new int[] { 0, 0, 0, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275, 306, 337, 366 };
+
+	private static final Map<String, Map<TimeZone, SafeDateFormat>> instanceCaches = new HashMap<String, Map<TimeZone, SafeDateFormat>>();
+
+	public static SafeDateFormat getInstance(String pattern) {
+		return getInstance(pattern, TimeZone.getDefault());
+	}
+
+	public static SafeDateFormat getInstance(String pattern, TimeZone timeZone) {
+		Map<TimeZone, SafeDateFormat> map = instanceCaches.get(pattern);
+		if (map == null) {
+			map = new HashMap<TimeZone, SafeDateFormat>();
+			instanceCaches.put(pattern, map);
+		}
+		SafeDateFormat instance = map.get(timeZone);
+		if (instance == null) {
+			instance = new SafeDateFormat(pattern, timeZone);
+			map.put(timeZone, instance);
+		}
+		return instance;
+	}
 
 	public static int getFairfieldDays(int year, int month, int day) {
 		if (month < 3) {
@@ -41,11 +63,11 @@ public class SafeDateFormat {
 	private final char[] compiledPattern;
 	private final boolean needFairfieldDays;
 
-	public SafeDateFormat(String pattern) {
+	protected SafeDateFormat(String pattern) {
 		this(pattern, TimeZone.getDefault());
 	}
 
-	public SafeDateFormat(String pattern, TimeZone timeZone) {
+	protected SafeDateFormat(String pattern, TimeZone timeZone) {
 		timeZoneOffset = timeZone.getRawOffset();
 		compiledPattern = compile(pattern);
 		boolean _needFairfieldDays = false;
