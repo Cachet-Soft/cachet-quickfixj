@@ -18,17 +18,17 @@ public class SafeDateFormat {
 
 	static final int[] MONTH_DAYS = new int[] { 0, 0, 0, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275, 306, 337, 366 };
 
-	private static final Map<String, Map<TimeZone, SafeDateFormat>> instanceCaches = new HashMap<String, Map<TimeZone, SafeDateFormat>>();
+	private static final Map<String, Map<TimeZone, SafeDateFormat>> instanceCache = new HashMap<String, Map<TimeZone, SafeDateFormat>>();
 
 	public static SafeDateFormat getInstance(String pattern) {
 		return getInstance(pattern, TimeZone.getDefault());
 	}
 
 	public static SafeDateFormat getInstance(String pattern, TimeZone timeZone) {
-		Map<TimeZone, SafeDateFormat> map = instanceCaches.get(pattern);
+		Map<TimeZone, SafeDateFormat> map = instanceCache.get(pattern);
 		if (map == null) {
 			map = new HashMap<TimeZone, SafeDateFormat>();
-			instanceCaches.put(pattern, map);
+			instanceCache.put(pattern, map);
 		}
 		SafeDateFormat instance = map.get(timeZone);
 		if (instance == null) {
@@ -61,6 +61,7 @@ public class SafeDateFormat {
 
 	private final long timeZoneOffset;
 	private final char[] compiledPattern;
+	private final int length;
 	private final boolean needFairfieldDays;
 
 	protected SafeDateFormat(String pattern) {
@@ -70,6 +71,7 @@ public class SafeDateFormat {
 	protected SafeDateFormat(String pattern, TimeZone timeZone) {
 		timeZoneOffset = timeZone.getRawOffset();
 		compiledPattern = compile(pattern);
+		length = compiledPattern.length;
 		boolean _needFairfieldDays = false;
 		for (char c : compiledPattern) {
 			if (c <= PATTERN_DAY) {
@@ -159,7 +161,7 @@ public class SafeDateFormat {
 	}
 
 	public String format(long date) {
-		return format(date, new StringBuilder()).toString();
+		return format(date, new StringBuilder(length)).toString();
 	}
 
 	public StringBuilder format(long date, StringBuilder toAppendTo) {
