@@ -269,7 +269,7 @@ public class SafeDecimalFormat {
 	public double parse(CharSequence source) {
 		int length = source.length();
 		long unscaled = 0;
-		long factor = 1;
+		double factor = 1.0;
 		boolean foundDecimalSeparator = false;
 		for (int i = 0; i < length; i++) {
 			char c = source.charAt(i);
@@ -280,6 +280,8 @@ public class SafeDecimalFormat {
 				}
 			} else if (c == '.') {
 				foundDecimalSeparator = true;
+			} else if (c == '-') {
+				factor = -factor;
 			}
 		}
 		return unscaled / factor;
@@ -289,6 +291,7 @@ public class SafeDecimalFormat {
 		int length = source.length();
 		long unscaled = 0;
 		int _scale = 0;
+		boolean minus = false;
 		boolean foundDecimalSeparator = false;
 		for (int i = 0; i < length; i++) {
 			char c = source.charAt(i);
@@ -299,7 +302,12 @@ public class SafeDecimalFormat {
 				}
 			} else if (c == '.') {
 				foundDecimalSeparator = true;
+			} else if (c == '-') {
+				minus = true;
 			}
+		}
+		if (minus) {
+			unscaled = -unscaled;
 		}
 		return BigDecimal.valueOf(unscaled, _scale);
 	}
