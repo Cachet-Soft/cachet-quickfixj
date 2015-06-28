@@ -11,20 +11,21 @@ public class SafeDecimalFormatTest {
 
 	@Test
 	public void test() {
-		String[] patterns = new String[] { "0.000000", "#.######", "b0.000000e", "b#.######e", "0000000000" };
+		String[] patterns = new String[] { "0.000000", "#.######", "b0.000000e", "b#.######e", "0000000000",
+				"0,000.000", "#,###.###" };
 		for (String pattern : patterns) {
 			SafeDecimalFormat sdf = SafeDecimalFormat.getInstance(pattern);
 			DecimalFormat df = new DecimalFormat(pattern);
 			for (double d : new double[] { -0.000001, 0.000009, -0.000010,
-					0.100000, 1.100000, 10.100000 }) {
-				assertEquals(pattern, df.format(d), sdf.format(d));
+					0.100000, 1.100000, 10.100000, 100.001, 1100.0001 }) {
+				assertEquals(d + " " + pattern, df.format(d), sdf.format(d));
 			}
 		}
 		for (String pattern : patterns) {
 			SafeDecimalFormat sdf = SafeDecimalFormat.getInstance(pattern);
 			DecimalFormat df = new DecimalFormat(pattern);
-			for (long d : new long[] { -1, 9, -10, 100000, 1100000, 10100000 }) {
-				assertEquals(pattern, df.format(d), sdf.format(d));
+			for (long d : new long[] { -1, 9, -10, 100, 1100, 100000, 1100000, 10100000 }) {
+				assertEquals(d + " " + pattern, df.format(d), sdf.format(d));
 			}
 		}
 
