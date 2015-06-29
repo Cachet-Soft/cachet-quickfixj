@@ -129,9 +129,14 @@ public class SafeDecimalFormat {
 	public StringBuilder subFormat(long number, StringBuilder toAppendTo) {
 		long _factor = 1;
 		int _scale = 1;
-		while (_factor * 10 <= number || _scale < minimumIntegerDigit) {
+		while (_factor * 10 <= number) {
 			_factor *= 10;
 			_scale++;
+		}
+		int scaleInteger = minimumIntegerDigit;
+		while (scaleInteger > _scale) {
+			toAppendTo.append('0');
+			scaleInteger--;
 		}
 		while (_scale > 0) {
 			long c = number / _factor % 10;
@@ -151,13 +156,17 @@ public class SafeDecimalFormat {
 	public StringBuilder subFormatWithGroup(long number, StringBuilder toAppendTo) {
 		long _factor = 1;
 		int _scale = 1;
-		while (_factor * 10 <= number || _scale < minimumIntegerDigit) {
+		while (_factor * 10 <= number) {
 			_factor *= 10;
 			_scale++;
 		}
-		int groupCount = _scale % groupLength;
-		if (groupCount == 0) {
-			groupCount = 3;
+		int scaleInteger = minimumIntegerDigit;
+		while (scaleInteger > _scale) {
+			toAppendTo.append('0');
+			scaleInteger--;
+			if (scaleInteger % groupLength == 0) {
+				toAppendTo.append(',');
+			}
 		}
 		while (true) {
 			long c = number / _factor % 10;
@@ -166,12 +175,10 @@ public class SafeDecimalFormat {
 			if (_scale <= 0) {
 				break;
 			}
-			_factor /= 10;
-			groupCount--;
-			if (groupCount <= 0) {
-				groupCount = groupLength;
+			if (_scale % groupLength == 0) {
 				toAppendTo.append(',');
 			}
+			_factor /= 10;
 		}
 		if (minimumFractionDigit > 0) {
 			toAppendTo.append('.');
@@ -270,8 +277,9 @@ public class SafeDecimalFormat {
 		int length = source.length();
 		long unscaled = 0;
 		double factor = 1.0;
+		boolean negative = source.charAt(0) == '-';
 		boolean foundDecimalSeparator = false;
-		for (int i = 0; i < length; i++) {
+		for (int i = negative ? 1 : 0; i < length; i++) {
 			char c = source.charAt(i);
 			if (c >= '0' && c <= '9') {
 				unscaled = unscaled * 10 + c - '0';
@@ -280,9 +288,10 @@ public class SafeDecimalFormat {
 				}
 			} else if (c == '.') {
 				foundDecimalSeparator = true;
-			} else if (c == '-') {
-				factor = -factor;
 			}
+		}
+		if (negative) {
+			unscaled = -unscaled;
 		}
 		return unscaled / factor;
 	}
@@ -291,9 +300,9 @@ public class SafeDecimalFormat {
 		int length = source.length();
 		long unscaled = 0;
 		int _scale = 0;
-		boolean minus = false;
+		boolean negative = source.charAt(0) == '-';
 		boolean foundDecimalSeparator = false;
-		for (int i = 0; i < length; i++) {
+		for (int i = negative ? 1 : 0; i < length; i++) {
 			char c = source.charAt(i);
 			if (c >= '0' && c <= '9') {
 				unscaled = unscaled * 10 + c - '0';
@@ -302,11 +311,9 @@ public class SafeDecimalFormat {
 				}
 			} else if (c == '.') {
 				foundDecimalSeparator = true;
-			} else if (c == '-') {
-				minus = true;
 			}
 		}
-		if (minus) {
+		if (negative) {
 			unscaled = -unscaled;
 		}
 		return BigDecimal.valueOf(unscaled, _scale);
