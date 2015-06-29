@@ -225,6 +225,10 @@ public class SafeDecimalFormat {
 			_factor *= 10;
 			_scale++;
 		}
+		if (minimumIntegerDigit == 0 && minimumFractionDigit > 0 && number < 1) {
+			_factor /= 10;
+			_scale--;
+		}
 		while (_scale > 0) {
 			if (_scale == scale) {
 				toAppendTo.append('.');
@@ -244,15 +248,16 @@ public class SafeDecimalFormat {
 		long unscaled = (long) (number * factor + 0.5);
 		long _factor = factor;
 		int _scale = scale + 1;
-		int minimumIntegerScale = scale + minimumIntegerDigit;
-		while (_factor * 10 <= unscaled || _scale < minimumIntegerScale) {
+		int scaleInteger = scale + minimumIntegerDigit;
+		while (_factor * 10 <= unscaled || _scale < scaleInteger) {
 			_factor *= 10;
 			_scale++;
 		}
-		int groupCount = (_scale - scale) % groupLength;
-		if (groupCount == 0) {
-			groupCount = 3;
+		if (minimumIntegerDigit == 0 && minimumFractionDigit > 0 && number < 1) {
+			_factor /= 10;
+			_scale--;
 		}
+		scaleInteger = _scale - scale;
 		while (_scale > 0) {
 			if (_scale == scale) {
 				toAppendTo.append('.');
@@ -264,9 +269,8 @@ public class SafeDecimalFormat {
 				break; // 0埋め不要なので抜けます
 			}
 			_factor /= 10;
-			groupCount--;
-			if (_scale > scale && groupCount <= 0) {
-				groupCount = groupLength;
+			scaleInteger--;
+			if (_scale > scale && scaleInteger % groupLength == 0) {
 				toAppendTo.append(',');
 			}
 		}

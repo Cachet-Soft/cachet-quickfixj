@@ -12,7 +12,8 @@ public class SafeDecimalFormatTest {
 
 	@Test
 	public void test() throws ParseException {
-		String[] patterns = new String[] { "0.000000", "#.######", "b0.000000e", "b#.######e", "0000000000",
+		String[] patterns = new String[] { "0.000000", "#.######", "#.00000", "b0.000000e", "b#.######e",
+				"0000000000",
 				"0,000.000", "#,###.###", "D-0000000" };
 		for (String pattern : patterns) {
 			SafeDecimalFormat sdf = SafeDecimalFormat.getInstance(pattern);
