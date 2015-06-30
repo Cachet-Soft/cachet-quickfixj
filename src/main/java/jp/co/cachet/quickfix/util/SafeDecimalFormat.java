@@ -11,6 +11,9 @@ public class SafeDecimalFormat {
 	static final int PATTERN_GROUP_SEPARATOR = ',';
 	static final int PATTERN_DECIMAL_SEPARATOR = '.';
 
+	static final int PATTERN_MAX_LENGTH = 19;
+	static final char[] ZERO_CHARS = "0000000000000000000".toCharArray();
+
 	static final Map<String, SafeDecimalFormat> instanceCache = new HashMap<String, SafeDecimalFormat>();
 
 	public static SafeDecimalFormat getInstance(String pattern) {
@@ -84,6 +87,9 @@ public class SafeDecimalFormat {
 			sb.append('\0');
 		}
 
+		if ((_minimumFractionDigit + _minimumIntegerDigit) > PATTERN_MAX_LENGTH) {
+			throw new IllegalArgumentException(pattern);
+		}
 		minimumFractionDigit = _minimumFractionDigit;
 		zeroPaddingScale = _scale - _minimumFractionDigit;
 		minimumIntegerDigit = _minimumIntegerDigit;
@@ -133,10 +139,9 @@ public class SafeDecimalFormat {
 			_factor *= 10;
 			_scale++;
 		}
-		int scaleInteger = minimumIntegerDigit;
-		while (scaleInteger > _scale) {
-			toAppendTo.append('0');
-			scaleInteger--;
+		int zeroPaddingInteger = minimumIntegerDigit - _scale;
+		if (zeroPaddingInteger > 0) {
+			toAppendTo.append(ZERO_CHARS, 0, zeroPaddingInteger);
 		}
 		while (_scale > 0) {
 			long c = number / _factor % 10;
@@ -220,10 +225,13 @@ public class SafeDecimalFormat {
 		long unscaled = (long) (number * factor + 0.5);
 		long _factor = factor;
 		int _scale = scale + 1;
-		int minimumIntegerScale = scale + minimumIntegerDigit;
-		while (_factor * 10 <= unscaled || _scale < minimumIntegerScale) {
+		while (_factor * 10 <= unscaled) {
 			_factor *= 10;
 			_scale++;
+		}
+		int zeroPaddingInteger = scale + minimumIntegerDigit - _scale;
+		if (zeroPaddingInteger > 0) {
+			toAppendTo.append(ZERO_CHARS, 0, zeroPaddingInteger);
 		}
 		if (minimumIntegerDigit == 0 && minimumFractionDigit > 0 && number < 1) {
 			_factor /= 10;
