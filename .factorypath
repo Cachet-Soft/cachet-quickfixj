@@ -1,0 +1,4 @@
+<factorypath>
+    <factorypathentry kind="WKSPJAR" id="/cachet-quickfixj/extlib/jmh-core-1.10.1.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="WKSPJAR" id="/cachet-quickfixj/extlib/jmh-generator-annprocess-1.10.1.jar" enabled="true" runInBatchMode="false"/>
+</factorypath>

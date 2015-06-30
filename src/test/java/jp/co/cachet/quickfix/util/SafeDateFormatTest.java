@@ -7,11 +7,27 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
 
 public class SafeDateFormatTest {
+	private static final SafeDateFormat safeDateFormat = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS");
+	private static final ThreadLocal<SimpleDateFormat> simpleDateFormat = new ThreadLocal<SimpleDateFormat>() {
+		protected SimpleDateFormat initialValue() {
+			return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss.SSS");
+		}
+	};
 
+	private static String getDateStr() {
+		return safeDateFormat.format(System.currentTimeMillis());
+	}
 	@Test
 	public void test() throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss.SSS");
@@ -91,6 +107,52 @@ public class SafeDateFormatTest {
 		}
 		ns1 = System.nanoTime() - nsStart;
 		System.out.printf("format(timeOnly) latency SafeDateFormat(%,d ns) SimpleDateFormat(%,d ns)\n", ns0, ns1);
+	}
+
+	@Test
+	public void launchBenchmark() throws Exception {
+		Options opt = new OptionsBuilder()
+				// Specify which benchmarks to run.
+				// You can be more specific if you'd like to run only one
+				// benchmark per test.
+				.include(this.getClass().getName() + ".*")
+				// Set the following options as needed
+				.mode(Mode.AverageTime)
+				.timeUnit(TimeUnit.NANOSECONDS)
+				.warmupTime(TimeValue.seconds(1))
+				.warmupIterations(3)
+				.measurementTime(TimeValue.seconds(1))
+				.measurementIterations(3)
+				.threads(2)
+				.forks(1)
+				.shouldFailOnError(true)
+				.shouldDoGC(true)
+				// .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
+				// "-XX:+PrintInlining")
+				// .addProfiler(WinPerfAsmProfiler.class)
+				.build();
+
+		new Runner(opt).run();
+	}
+
+	@Benchmark
+	public void formatOfSafeDateFormat() {
+		safeDateFormat.format(System.currentTimeMillis());
+	}
+
+	@Benchmark
+	public void formatOfSimpleDateFormat() {
+		simpleDateFormat.get().format(new Date());
+	}
+
+	@Benchmark
+	public void parseOfSafeDateFormat() {
+		safeDateFormat.parse(getDateStr());
+	}
+
+	@Benchmark
+	public void parseOfSimpleDateFormat() throws ParseException {
+		simpleDateFormat.get().parse(getDateStr());
 	}
 
 }

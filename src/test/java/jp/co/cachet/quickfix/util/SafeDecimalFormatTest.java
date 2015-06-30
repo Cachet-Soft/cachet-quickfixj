@@ -3,12 +3,30 @@ package jp.co.cachet.quickfix.util;
 import static org.junit.Assert.assertEquals;
 
 import java.text.DecimalFormat;
-import java.text.FieldPosition;
 import java.text.ParseException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
 
 public class SafeDecimalFormatTest {
+	private static final AtomicLong idCounter = new AtomicLong(10000000);
+	private static final SafeDecimalFormat safeDecimalFormat = SafeDecimalFormat.getInstance("D-00000000");
+	private static final ThreadLocal<DecimalFormat> decimalFormat = new ThreadLocal<DecimalFormat>() {
+		protected DecimalFormat initialValue() {
+			return new DecimalFormat("D-00000000");
+		}
+	};
+
+	private static String getIdStr() {
+		return safeDecimalFormat.format(idCounter.incrementAndGet());
+	}
 
 	@Test
 	public void test() throws ParseException {
@@ -43,74 +61,51 @@ public class SafeDecimalFormatTest {
 			}
 		}
 
-		int max = 1000000;
-		StringBuilder builder = new StringBuilder(23);
-		StringBuffer buffer = new StringBuffer(23);
-		FieldPosition pos = new FieldPosition(0);
-
-		{
-			// format(double) latency確認
-			SafeDecimalFormat sdf = SafeDecimalFormat.getInstance("0.000000");
-			DecimalFormat df = new DecimalFormat("0.000000");
-			double number = 123.4567;
-			long nsStart = System.nanoTime();
-			for (int i = 0; i < max; i++) {
-				builder.setLength(0);
-				sdf.format(number, builder);
-			}
-			long ns0 = System.nanoTime() - nsStart;
-
-			nsStart = System.nanoTime();
-			for (int i = 0; i < max; i++) {
-				buffer.setLength(0);
-				df.format(number, buffer, pos);
-			}
-			long ns1 = System.nanoTime() - nsStart;
-			assertEquals(df.format(number), sdf.format(number));
-			System.out.printf("format(double) latency SafeDecimalFormat(%,d ns) DecimalFormat(%,d ns)\n", ns0, ns1);
-		}
-
-		{
-			// format(long) latency確認
-			SafeDecimalFormat sdf = SafeDecimalFormat.getInstance("0000000");
-			DecimalFormat df = new DecimalFormat("0000000");
-			long number = System.currentTimeMillis();
-			long nsStart = System.nanoTime();
-			for (int i = 0; i < max; i++) {
-				builder.setLength(0);
-				sdf.format(number, builder);
-			}
-			long ns0 = System.nanoTime() - nsStart;
-
-			nsStart = System.nanoTime();
-			for (int i = 0; i < max; i++) {
-				buffer.setLength(0);
-				df.format(number, buffer, pos);
-			}
-			long ns1 = System.nanoTime() - nsStart;
-			assertEquals(df.format(number), sdf.format(number));
-			System.out.printf("format(long) latency SafeDecimalFormat(%,d ns) DecimalFormat(%,d ns)\n", ns0, ns1);
-		}
-
-		{
-			// parse() latency確認
-			SafeDecimalFormat sdf = SafeDecimalFormat.getInstance("0.000000");
-			DecimalFormat df = new DecimalFormat("0.000000");
-			String number = df.format(123.4567);
-			long nsStart = System.nanoTime();
-			for (int i = 0; i < max; i++) {
-				sdf.parse(number);
-			}
-			long ns0 = System.nanoTime() - nsStart;
-
-			nsStart = System.nanoTime();
-			for (int i = 0; i < max; i++) {
-				df.parse(number);
-			}
-			long ns1 = System.nanoTime() - nsStart;
-			assertEquals(df.parse(number).doubleValue(), sdf.parse(number), Double.MIN_NORMAL);
-			System.out.printf("parse() latency SafeDecimalFormat(%,d ns) DecimalFormat(%,d ns)\n", ns0, ns1);
-		}
 	}
 
+	@Test
+	public void launchBenchmark() throws Exception {
+		Options opt = new OptionsBuilder()
+				// Specify which benchmarks to run.
+				// You can be more specific if you'd like to run only one
+				// benchmark per test.
+				.include(this.getClass().getName() + ".*")
+				// Set the following options as needed
+				.mode(Mode.AverageTime)
+				.timeUnit(TimeUnit.NANOSECONDS)
+				.warmupTime(TimeValue.seconds(1))
+				.warmupIterations(3)
+				.measurementTime(TimeValue.seconds(1))
+				.measurementIterations(3)
+				.threads(2)
+				.forks(1)
+				.shouldFailOnError(true)
+				.shouldDoGC(true)
+				// .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
+				// "-XX:+PrintInlining")
+				// .addProfiler(WinPerfAsmProfiler.class)
+				.build();
+
+		new Runner(opt).run();
+	}
+
+	@Benchmark
+	public void formatOfSafeDecimalFormat() {
+		safeDecimalFormat.format(idCounter.incrementAndGet());
+	}
+
+	@Benchmark
+	public void formatOfDecimalFormat() {
+		decimalFormat.get().format(idCounter.incrementAndGet());
+	}
+
+	@Benchmark
+	public void parseOfSafeDecimalFormat() {
+		safeDecimalFormat.parse(getIdStr());
+	}
+
+	@Benchmark
+	public void parseOfDecimalFormat() throws ParseException {
+		decimalFormat.get().parse(getIdStr());
+	}
 }
