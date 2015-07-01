@@ -69,6 +69,9 @@ public class SafeDateFormat {
 	}
 
 	protected SafeDateFormat(String pattern, TimeZone timeZone) {
+		if (timeZone.useDaylightTime()) {
+			throw new IllegalArgumentException(timeZone.getDisplayName());
+		}
 		timeZoneOffset = timeZone.getRawOffset();
 		compiledPattern = compile(pattern);
 		length = compiledPattern.length;

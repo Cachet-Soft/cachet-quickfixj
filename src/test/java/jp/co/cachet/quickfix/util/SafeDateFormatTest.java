@@ -1,8 +1,8 @@
 package jp.co.cachet.quickfix.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-import java.text.FieldPosition;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -54,59 +54,14 @@ public class SafeDateFormatTest {
 		// TimeZone確認
 		SafeDateFormat safeUtc = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("UTC"));
 		assertEquals("1970/01/01-00:00:00.000", safeUtc.format(0));
-
-		int max = 1000000;
-		StringBuilder builder = new StringBuilder(23);
-		StringBuffer buffer = new StringBuffer(23);
-		FieldPosition pos = new FieldPosition(0);
-		// format() latency確認
-		long nsStart = System.nanoTime();
-		for (int i = 0; i < max; i++) {
-			builder.setLength(0);
-			safe.format(System.currentTimeMillis(), builder);
+		SafeDateFormat safeGmt9 = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("GMT+9"));
+		SafeDateFormat safeJst = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("JST"));
+		assertEquals(safeJst.format(0), safeGmt9.format(0));
+		try {
+			SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("America/New_York"));
+			fail();
+		} catch (Exception ignored) {
 		}
-		long ns0 = System.nanoTime() - nsStart;
-
-		nsStart = System.nanoTime();
-		for (int i = 0; i < max; i++) {
-			buffer.setLength(0);
-			sdf.format(new Date(), buffer, pos);
-		}
-		long ns1 = System.nanoTime() - nsStart;
-		System.out.printf("format() latency SafeDateFormat(%,d ns) SimpleDateFormat(%,d ns)\n", ns0, ns1);
-
-		String date = sdf.format(new Date());
-		// parse() latency確認
-		nsStart = System.nanoTime();
-		for (int i = 0; i < max; i++) {
-			safe.parse(date);
-		}
-		ns0 = System.nanoTime() - nsStart;
-
-		nsStart = System.nanoTime();
-		for (int i = 0; i < max; i++) {
-			sdf.parse(date);
-		}
-		ns1 = System.nanoTime() - nsStart;
-		System.out.printf("parse() latency SafeDateFormat(%,d ns) SimpleDateFormat(%,d ns)\n", ns0, ns1);
-
-		// format(timeOnly) latency確認
-		safe = SafeDateFormat.getInstance("HH:mm:ss.SSS");
-		sdf = new SimpleDateFormat("HH:mm:ss.SSS");
-		nsStart = System.nanoTime();
-		for (int i = 0; i < max; i++) {
-			builder.setLength(0);
-			safe.format(System.currentTimeMillis(), builder);
-		}
-		ns0 = System.nanoTime() - nsStart;
-
-		nsStart = System.nanoTime();
-		for (int i = 0; i < max; i++) {
-			buffer.setLength(0);
-			sdf.format(new Date(), buffer, pos);
-		}
-		ns1 = System.nanoTime() - nsStart;
-		System.out.printf("format(timeOnly) latency SafeDateFormat(%,d ns) SimpleDateFormat(%,d ns)\n", ns0, ns1);
 	}
 
 	@Test
