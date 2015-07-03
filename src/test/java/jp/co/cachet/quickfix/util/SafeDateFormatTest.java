@@ -1,7 +1,6 @@
 package jp.co.cachet.quickfix.util;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,39 +27,73 @@ public class SafeDateFormatTest {
 	private static String getDateStr() {
 		return safeDateFormat.format(System.currentTimeMillis());
 	}
+
 	@Test
 	public void test() throws ParseException {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss.SSS");
-		SafeDateFormat safe = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS");
-
-		String lastYear = "1970";
-		long ms = 0;
-		for (int i = 0; i < 100000; i++) {
-			ms += 86400000;
-			String date = sdf.format(new Date(ms));
-			long msDate = sdf.parse(date).getTime();
-			// parse確認
-			assertEquals(msDate, safe.parse(date));
-			// format確認
-			assertEquals(date, safe.format(msDate));
-
-			String year = date.substring(0, 4);
-			if (!year.equals(lastYear)) {
-				System.out.printf("passed all days of %s year\n", lastYear);
-				lastYear = year;
+		// Fairfieldの公式ベースの確認
+		for (String timeZoneId : TimeZone.getAvailableIDs()) {
+			if (timeZoneId.contains("/")) {
+				assertFairfieldDays("yyyyMMdd", TimeZone.getTimeZone(timeZoneId), false);
 			}
 		}
 
 		// TimeZone確認
-		SafeDateFormat safeUtc = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("UTC"));
-		assertEquals("1970/01/01-00:00:00.000", safeUtc.format(0));
-		SafeDateFormat safeGmt9 = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("GMT+9"));
-		SafeDateFormat safeJst = SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("JST"));
-		assertEquals(safeJst.format(0), safeGmt9.format(0));
-		try {
-			SafeDateFormat.getInstance("yyyy/MM/dd-HH:mm:ss.SSS", TimeZone.getTimeZone("America/New_York"));
-			fail();
-		} catch (Exception ignored) {
+		for (String timeZoneId : new String[] { "UTC", "GMT+9", "JST", "America/New_York" }) {
+			String pattern = "yyyy/MM/dd-HH:mm:ss.SSS";
+			TimeZone timeZone = TimeZone.getTimeZone(timeZoneId);
+			SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+			sdf.setTimeZone(timeZone);
+			SafeDateFormat safe = SafeDateFormat.getInstance(pattern, timeZone);
+
+			String date = sdf.format(new Date());
+			long msDate = sdf.parse(date).getTime();
+			assertEquals(timeZoneId, msDate, safe.parse(date));
+			assertEquals(timeZoneId, date, safe.format(msDate));
+		}
+	}
+
+	/**
+	 * Fairfieldの公式の確認。
+	 * 
+	 * @param pattern
+	 * @param timeZone
+	 * @param failsOnAssert
+	 * @throws ParseException
+	 */
+	private void assertFairfieldDays(String pattern, TimeZone timeZone, boolean failsOnAssert) throws ParseException {
+		SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+		sdf.setTimeZone(timeZone);
+		SafeDateFormat safe = SafeDateFormat.getInstance(pattern, timeZone);
+
+		boolean passed = true;
+		StringBuilder failedDates = new StringBuilder();
+		String minYear = null;
+		String maxYear = null;
+		long ms = 0;
+		for (int i = -100000; i < 100000; i++) {
+			ms = 86400000L * i;
+			String date = sdf.format(new Date(ms));
+			long msDate = sdf.parse(date).getTime();
+			if (failsOnAssert) {
+				assertEquals(msDate, safe.parse(date));
+				assertEquals(date, safe.format(msDate));
+			}
+			if (msDate != safe.parse(date) || !date.equals(safe.format(msDate))) {
+				passed = false;
+				failedDates.append(date).append(',');
+			}
+
+			maxYear = date.substring(0, 4);
+			if (minYear == null) {
+				minYear = maxYear;
+			}
+		}
+
+		if (passed) {
+			System.out.printf("passed %s from %s year till %s year\n", timeZone.getID(), minYear, maxYear);
+		} else {
+			failedDates.setLength(failedDates.length() - 1);
+			System.out.printf("FAILED! %s %s\n", timeZone.getID(), failedDates.toString());
 		}
 	}
 

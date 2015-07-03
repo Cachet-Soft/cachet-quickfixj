@@ -59,20 +59,24 @@ public class SafeDateFormat {
 		return value;
 	}
 
+	private final TimeZone timeZone;
 	private final long timeZoneOffset;
+	private final boolean useDaylightTime;
 	private final char[] compiledPattern;
 	private final int length;
 	private final boolean needFairfieldDays;
+
+	private final int thisYear;
+	private final long begginingOfThisYear;
 
 	protected SafeDateFormat(String pattern) {
 		this(pattern, TimeZone.getDefault());
 	}
 
 	protected SafeDateFormat(String pattern, TimeZone timeZone) {
-		if (timeZone.useDaylightTime()) {
-			throw new IllegalArgumentException(timeZone.getDisplayName());
-		}
+		this.timeZone = timeZone;
 		timeZoneOffset = timeZone.getRawOffset();
+		useDaylightTime = timeZone.useDaylightTime();
 		compiledPattern = compile(pattern);
 		length = compiledPattern.length;
 		boolean _needFairfieldDays = false;
@@ -83,6 +87,10 @@ public class SafeDateFormat {
 			}
 		}
 		needFairfieldDays = _needFairfieldDays;
+
+		int fairfieldDays = (int) (System.currentTimeMillis() / 86400000L) + EPOC_DAYS;
+		thisYear = fairfieldDays / 365;
+		begginingOfThisYear = getFairfieldDays(thisYear, 1, 1) * 86400000L;
 	}
 
 	private char[] compile(String pattern) {
@@ -158,9 +166,14 @@ public class SafeDateFormat {
 			}
 		}
 
-		int fairFieldDays = getFairfieldDays(year, month, day);
-		return (fairFieldDays - EPOC_DAYS) * 86400000L - timeZoneOffset
-				+ hours * 3600000L + minutes * 60000L + seconds * 1000L + millis;
+		int fairfieldDays = getFairfieldDays(year, month, day);
+		int milliseconds = (int) (hours * 3600000L + minutes * 60000L + seconds * 1000L + millis);
+		if (!useDaylightTime && year >= thisYear) {
+			return (fairfieldDays - EPOC_DAYS) * 86400000L - timeZoneOffset + milliseconds;
+		}
+		int dayOfWeek = fairfieldDays % 7 + 1;
+		return (fairfieldDays - EPOC_DAYS) * 86400000L + milliseconds
+				- timeZone.getOffset(1, year, month - 1, day, dayOfWeek, milliseconds);
 	}
 
 	public String format(long date) {
@@ -168,9 +181,10 @@ public class SafeDateFormat {
 	}
 
 	public StringBuilder format(long date, StringBuilder toAppendTo) {
-		date += timeZoneOffset;
-		if (date < 0) {
-			throw new IllegalArgumentException();
+		if (!useDaylightTime && date >= begginingOfThisYear) {
+			date += timeZoneOffset + EPOC_DAYS * 86400000L;
+		} else {
+			date += timeZone.getOffset(date) + EPOC_DAYS * 86400000L;
 		}
 
 		int year = 1970;
@@ -178,7 +192,7 @@ public class SafeDateFormat {
 		int day = 1;
 
 		if (needFairfieldDays) {
-			int fairfieldDays = (int) (date / 86400000L) + EPOC_DAYS;
+			int fairfieldDays = (int) (date / 86400000L);
 			year = fairfieldDays / 365;
 			int begginingOfYear = getFairfieldDays(year, 3, 1);
 			if (begginingOfYear > fairfieldDays) {
