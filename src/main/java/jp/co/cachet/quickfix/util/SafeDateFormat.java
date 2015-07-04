@@ -169,11 +169,11 @@ public class SafeDateFormat {
 		int fairfieldDays = getFairfieldDays(year, month, day);
 		int milliseconds = (int) (hours * 3600000L + minutes * 60000L + seconds * 1000L + millis);
 		if (!useDaylightTime && year >= thisYear) {
-			return (fairfieldDays - EPOC_DAYS) * 86400000L - timeZoneOffset + milliseconds;
+			return (fairfieldDays - EPOC_DAYS) * 86400000L + milliseconds - timeZoneOffset;
 		}
-		int dayOfWeek = fairfieldDays % 7 + 1;
+		int dayOfWeek = fairfieldDays % 7;
 		return (fairfieldDays - EPOC_DAYS) * 86400000L + milliseconds
-				- timeZone.getOffset(1, year, month - 1, day, dayOfWeek, milliseconds);
+				- timeZone.getOffset(1, year, month - 1, day, dayOfWeek == 0 ? 7 : dayOfWeek, milliseconds);
 	}
 
 	public String format(long date) {

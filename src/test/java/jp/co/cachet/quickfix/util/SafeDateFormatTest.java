@@ -78,9 +78,14 @@ public class SafeDateFormatTest {
 				assertEquals(msDate, safe.parse(date));
 				assertEquals(date, safe.format(msDate));
 			}
-			if (msDate != safe.parse(date) || !date.equals(safe.format(msDate))) {
+			if (msDate != safe.parse(date)) {
 				passed = false;
-				failedDates.append(date).append(',');
+				int diff = (int) (msDate - safe.parse(date)) / 1000;
+				failedDates.append('p').append(date).append('-').append(diff).append(',');
+			}
+			if (!date.equals(safe.format(msDate))) {
+				passed = false;
+				failedDates.append('f').append(date).append(',');
 			}
 
 			maxYear = date.substring(0, 4);
