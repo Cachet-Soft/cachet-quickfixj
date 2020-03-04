@@ -8,5 +8,7 @@ target/data
 src/.DS_Store
 .DS_Store
 /build/
+/bin/
 /.gradle/
 /.apt_generated/
+/.apt_generated_tests/

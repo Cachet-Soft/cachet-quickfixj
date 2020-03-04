@@ -9,32 +9,27 @@ targetCompatibility = 1.8
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 ext {
-		quickfixjVersion = '1.5.3'
-		minaVersion = '1.1.7'
-		slf4jVersion = '1.7.7'
-		log4j2Version = '2.0-rc1'
+		quickfixjVersion = '1.6.4'
+		minaVersion = '2.1.3'
+		slf4jVersion = '1.7.30'
+		log4j2Version = '2.13.1'
 }
 
 repositories {
     mavenCentral()
-    maven {url 'http://repo.marketcetera.org/maven'}
+    maven {url 'http://repo.marketcetera.org/maven/'}
 }
 
 dependencies {
-    compile 	"quickfixj:quickfixj-core:${quickfixjVersion}",
-    			"quickfixj:quickfixj-msg-fix40:${quickfixjVersion}", 
-    			"quickfixj:quickfixj-msg-fix41:${quickfixjVersion}", 
-    			"quickfixj:quickfixj-msg-fix42:${quickfixjVersion}", 
-    			"quickfixj:quickfixj-msg-fix43:${quickfixjVersion}", 
-    			"quickfixj:quickfixj-msg-fix44:${quickfixjVersion}", 
-    			"quickfixj:quickfixj-msg-fix44:${quickfixjVersion}",
+    compile 	"org.quickfixj:quickfixj-core:${quickfixjVersion}",
+    			"org.quickfixj:quickfixj-messages-all:${quickfixjVersion}", 
     			"org.apache.mina:mina-core:${minaVersion}",
     			"org.slf4j:slf4j-api:${slf4jVersion}",
     			"org.slf4j:slf4j-log4j12:${slf4jVersion}",
     			'uk.co.real-logic:sbe:1.0.2-RC2'
     			
 
-    testCompile 'junit:junit:4.11',
+    testCompile 'junit:junit:4.12',
 				'org.openjdk.jmh:jmh-core:1.10.1',
 				'org.openjdk.jmh:jmh-generator-annprocess:1.10.1'
 }
